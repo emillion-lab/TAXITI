@@ -14,6 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install ImageMagick
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq imagemagick fonts-dejavu-core
+
       - name: Clone source
         run: git clone --depth 1 https://github.com/emillion-lab/FISHTAXI /tmp/src
 
@@ -33,14 +36,28 @@ jobs:
           sed -i 's|i primi 300 autisti nel mondo|i primi 50 autisti per città|g; s|i primi 300 autisti|i primi 50 autisti per città|g' index.html
           sed -i 's|los primeros 300 conductores en el mundo|los primeros 50 conductores por ciudad|g; s|los primeros 300 conductores|los primeros 50 conductores por ciudad|g' index.html
 
-      - name: Generate TAXITI icons (no fish)
+      - name: Generate TAXITI icons (yellow, black text, taxi checkers)
         run: |
           mkdir -p img
-          convert -size 512x512 xc:'#f5c518' -gravity center -pointsize 300 -font DejaVu-Sans-Bold -fill '#0a0a0a' -annotate +0+10 'T' img/icon-512.png
+          # Шахматни квадратчета 32px, два реда с офсет — горе и долу
+          D=""
+          for y in 0 448; do
+            for x in $(seq 0 64 480); do D="$D rectangle $x,$y $((x+32)),$((y+32))"; done
+            for x in $(seq 32 64 480); do D="$D rectangle $x,$((y+32)) $((x+32)),$((y+64))"; done
+          done
+          convert -size 512x512 xc:'#f5c518' -fill black -draw "$D" \
+            -gravity center -pointsize 240 -font DejaVu-Sans-Bold -fill black -annotate +0+15 'T' img/icon-512.png
           convert img/icon-512.png -resize 192x192 img/icon-192.png
           convert img/icon-512.png -resize 180x180 img/icon-180.png
           cp img/icon-512.png favicon.png
-          convert -size 630x630 xc:'#0a0a0a' -gravity center -pointsize 110 -font DejaVu-Sans-Bold -fill '#f5c518' -annotate +0+0 'TAXITI' img/og-image.jpg
+          # OG изображение с пълното име
+          D2=""
+          for y in 0 566; do
+            for x in $(seq 0 64 566); do D2="$D2 rectangle $x,$y $((x+32)),$((y+32))"; done
+            for x in $(seq 32 64 566); do D2="$D2 rectangle $x,$((y+32)) $((x+32)),$((y+64))"; done
+          done
+          convert -size 630x630 xc:'#f5c518' -fill black -draw "$D2" \
+            -gravity center -pointsize 100 -font DejaVu-Sans-Bold -fill black -annotate +0+0 'TAXITI' img/og-image.jpg
 
       - name: Driver placeholder
         run: |
@@ -51,7 +68,7 @@ jobs:
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1">
           <title>TAXITI — Driver</title>
-          <style>body{background:#0a0a0a;color:#f0f0f0;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center;padding:20px}h1{color:#f5c518}</style>
+          <style>body{background:#f5c518;color:#111;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center;padding:20px}h1{letter-spacing:2px}</style>
           </head>
           <body><div><h1>TAXITI Driver</h1><p>Шофьорското приложение идва скоро.<br>The driver app is coming soon.</p></div></body>
           </html>
@@ -62,5 +79,5 @@ jobs:
           git config user.name taxiti-bot
           git config user.email taxiti-bot@users.noreply.github.com
           git add -A
-          git commit -m "import: rebranded copy of FISHTAXI (TAXITI, 50/city free slots, generated icons)"
+          git commit -m "import: rebranded copy of FISHTAXI (TAXITI checkers branding, 50/city free slots)"
           git push
