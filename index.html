@@ -1,0 +1,1844 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#080808">
+<title>TAXITI — Direct Taxi Finder</title>
+<meta name="description" content="Find verified taxi drivers directly in Sofia. Call or message them yourself — see the car, price and driver before you book.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="TAXITI">
+<meta property="og:title" content="🚕 TAXITI — Direct Taxi Finder">
+<meta property="og:description" content="Find verified taxi drivers directly. See the car, price and driver before you book — call or message them yourself.">
+<meta property="og:image" content="https://emillion-lab.github.io/TAXITI/img/og-image.jpg">
+<meta property="og:image:width" content="630">
+<meta property="og:image:height" content="630">
+<meta property="og:url" content="https://emillion-lab.github.io/TAXITI/">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="🚕 TAXITI — Direct Taxi Finder">
+<meta name="twitter:description" content="Find verified taxi drivers directly. See the car, price and driver before you book.">
+<meta name="twitter:image" content="https://emillion-lab.github.io/TAXITI/img/og-image.jpg">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="favicon.png?v=2">
+<link rel="apple-touch-icon" href="https://emillion-lab.github.io/TAXITI/img/icon-180.png?v=2">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{--bg:#fafaf7;--s1:#fff;--s2:#f5f3ee;--s3:#ece8de;--brd:#ddd6c3;--y:#1a1a1a;--tx:#1a1a1a;--mu:#666;--mu2:#999;--gr:#16a34a;--rd:#dc2626;--bl:#1e40af;--or:#c2410c;--pu:#7e22ce;--cy:#0e7490;--pi:#be185d;--taxiY:#f5c518;--taxiB:#0a0a0a}
+[data-theme="dark"]{--bg:#080808;--s1:#111;--s2:#1a1a1a;--s3:#242424;--brd:#2e2e2e;--y:#f5c518;--tx:#f0f0f0;--mu:#aaa;--mu2:#555;--gr:#22c55e;--rd:#ef4444;--bl:#60a5fa;--or:#fb923c;--pu:#c084fc;--cy:#22d3ee;--pi:#f472b6}
+html,body{height:100%;background:var(--bg);color:var(--tx);font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden;display:flex;flex-direction:column}
+.top{background:#0a0a0a!important;border-bottom:3px solid #f5c518!important;height:50px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;flex-shrink:0}
+.logo{font-size:18px;font-weight:900;color:var(--y)}
+.tabs{display:flex;background:var(--s1);border-bottom:2px solid var(--brd);flex-shrink:0}
+.tab{flex:1;padding:8px 2px;font-size:12px;font-weight:800;border:none;background:transparent;color:var(--mu);cursor:pointer;border-bottom:3px solid transparent}
+.tab.on{color:var(--y);border-bottom-color:var(--y)}
+.page{display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0}
+.page.on{display:flex}
+
+/* MAP */
+#map{height:380px;background:#0d1117;flex-shrink:0}
+@media(max-height:800px){#map{height:42vh;min-height:230px}}
+.leaflet-container{background:#e8e6df!important}
+.leaflet-popup-content-wrapper{background:var(--s2)!important;color:var(--tx)!important;border:1px solid var(--brd)!important;border-radius:10px!important}
+.leaflet-popup-tip{background:var(--s2)!important}
+
+/* SEARCH */
+.srch{padding:7px 10px;background:var(--s1);border-bottom:1px solid var(--brd);flex-shrink:0;display:flex;gap:7px}
+.srch input{flex:1;background:var(--s2);border:1px solid var(--brd);color:var(--tx);border-radius:8px;padding:7px 11px;font-size:14px}
+.srch input:focus{outline:none;border-color:var(--y)}
+
+/* FILTERS */
+.fw{background:var(--s1);border-bottom:1px solid var(--brd);flex-shrink:0}
+.fs{padding:4px 8px;display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;align-items:center}
+.fs::-webkit-scrollbar{display:none}
+.fl{font-size:10px;color:var(--mu2);font-weight:700;text-transform:uppercase;white-space:nowrap;flex-shrink:0;letter-spacing:.5px}
+.flt{font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px;border:1px solid var(--brd);background:var(--s2);color:var(--mu);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s}
+.flt.on{background:rgba(245,197,24,.13);border-color:var(--y);color:var(--y)}
+.flt:active{opacity:.7}
+
+/* CARDS */
+.dlist{flex:1;overflow-y:auto;padding:8px}
+.dc{background:var(--s2);border:1px solid var(--brd);border-radius:14px;padding:11px;margin-bottom:7px;cursor:pointer;transition:border-color .15s}
+.dc:active{border-color:var(--y)}
+.dct{display:flex;gap:9px;align-items:flex-start}
+.dca{width:56px;height:56px;border-radius:12px;background:var(--s3);border:2px solid var(--brd);overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:24px}
+.dca img{width:100%;height:100%;object-fit:cover}
+.dci{flex:1;min-width:0}
+.dcn{font-size:15px;font-weight:800;margin-bottom:1px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.dcc{font-size:12px;color:var(--mu);margin-bottom:5px}
+.tags{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.t{font-size:11px;font-weight:700;padding:2px 7px;border-radius:9px;border:1px solid}
+.tg{color:var(--gr);border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.07)}
+.ty{color:var(--y);border-color:rgba(245,197,24,.3);background:rgba(245,197,24,.07)}
+.tb{color:var(--bl);border-color:rgba(59,130,246,.3);background:rgba(59,130,246,.07)}
+.tc{color:var(--cy);border-color:rgba(6,182,212,.3);background:rgba(6,182,212,.07)}
+.tr{color:var(--rd);border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.07)}
+.tp{color:var(--pu);border-color:rgba(168,85,247,.3);background:rgba(168,85,247,.07)}
+.to{color:var(--or);border-color:rgba(249,115,22,.3);background:rgba(249,115,22,.07)}
+.tpi{color:var(--pi);border-color:rgba(236,72,153,.3);background:rgba(236,72,153,.07)}
+.task{color:var(--mu);border-color:var(--brd);border-style:dashed;background:transparent}
+.pays{display:flex;gap:3px;margin-top:5px;flex-wrap:wrap}
+.pi2{font-size:11px;font-weight:700;padding:2px 6px;border-radius:6px;border:1px solid rgba(245,197,24,.3);color:var(--y);background:rgba(245,197,24,.06)}
+.rb{font-size:12px;color:var(--y);font-weight:700;margin-left:auto;flex-shrink:0}
+.vb{font-size:10px;font-weight:700;color:var(--gr);background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:7px;padding:1px 5px;white-space:nowrap}
+.dcb{display:flex;gap:5px;margin-top:9px}
+.bc{flex:1;background:var(--gr);color:#000;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:800;cursor:pointer}
+.bv{flex:1;background:#7360f2;color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:800;cursor:pointer}
+
+/* MODAL */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.95);z-index:1000;align-items:flex-end}
+.modal.on{display:flex}
+.mb{background:var(--s1);border-top:3px solid var(--y);border-radius:20px 20px 0 0;padding:18px;width:100%;height:85vh;overflow-y:auto}
+.mc{float:right;background:var(--s3);border:none;color:var(--mu);border-radius:50%;width:30px;height:30px;font-size:16px;cursor:pointer;line-height:30px;text-align:center}
+.mav{width:80px;height:80px;border-radius:14px;background:var(--s3);border:3px solid var(--y);margin:0 auto 10px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:32px}
+.mav img{width:100%;height:100%;object-fit:cover}
+.mn{font-size:19px;font-weight:900;text-align:center;margin-bottom:2px}
+.mc2{font-size:12px;color:var(--mu);text-align:center;margin-bottom:6px}
+.mh{font-size:11px;color:var(--mu);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin:12px 0 5px;border-bottom:1px solid var(--brd);padding-bottom:3px}
+.mphotos{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.mphotos img{height:64px;width:86px;object-fit:cover;border-radius:8px;border:1px solid var(--brd);flex-shrink:0;cursor:pointer}
+.imglb{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:2000;align-items:center;justify-content:center;padding:20px}
+.imglb img{max-width:100%;max-height:100%;border-radius:10px}
+.ir{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--brd)}
+.ir:last-child{border:none}
+.ik{font-size:12px;color:var(--mu)}
+.iv{font-size:13px;font-weight:700}
+.mbtns{display:flex;gap:8px;margin-top:14px}
+.mcall{flex:1;background:var(--gr);color:#000;border:none;border-radius:10px;padding:12px;font-size:15px;font-weight:800;cursor:pointer}
+.mvib{flex:1;background:#7360f2;color:#fff;border:none;border-radius:10px;padding:12px;font-size:15px;font-weight:800;cursor:pointer}
+.pref-btn{font-size:12px;font-weight:700;padding:6px 11px;border-radius:18px;border:1px solid var(--brd);background:var(--s2);color:var(--mu);cursor:pointer;transition:all .15s}
+.pref-btn.on{background:var(--taxiY);border-color:var(--taxiY);color:#000}
+.sbox{background:var(--s3);border-left:3px solid var(--or);border-radius:8px;padding:9px 11px;font-size:12px;color:var(--mu);margin:8px 0;line-height:1.5}
+
+/* HOW & JOIN */
+.scroll-page{flex:1;overflow-y:auto;padding:13px}
+.hs{background:var(--s2);border:1px solid var(--brd);border-radius:13px;padding:13px;margin-bottom:7px;display:flex;gap:11px}
+.hn{width:34px;height:34px;border-radius:50%;background:var(--taxiY);color:#000;font-size:14px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hs h3{font-size:14px;font-weight:800;margin-bottom:2px}
+.hs p{font-size:12px;color:var(--mu);line-height:1.5}
+.jc{background:var(--s2);border:1px solid var(--brd);border-radius:13px;padding:13px;margin-bottom:7px}
+.jc h3{font-size:14px;font-weight:800;margin-bottom:7px;color:var(--y)}
+.jc p{font-size:12px;color:var(--mu);line-height:1.5;margin-bottom:5px}
+.pbox{background:var(--s3);border:2px solid var(--y);border-radius:11px;padding:11px;text-align:center;margin:7px 0}
+.br{display:flex;gap:7px;margin-bottom:6px}
+.bi2{font-size:15px;flex-shrink:0}
+.bt{font-size:12px;color:var(--mu);line-height:1.4}
+.bt strong{color:var(--tx)}
+.jbtn,.hcta{background:var(--taxiY);color:#000;border:none;border-radius:11px;padding:12px;font-size:14px;font-weight:900;width:100%;cursor:pointer;margin-top:7px}
+@media (max-width:560px){
+  .dc .dn, .dcard .dn, .drv-name{font-size:19px !important;}
+  .t{font-size:13px !important;padding:4px 9px !important;}
+  #mbio,#mprice,#mareas{font-size:15px !important;}
+}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <img src="img/header_logo.png" style="height:44px;object-fit:contain;display:block" alt="TAXITI">
+  <div style="display:flex;align-items:center;gap:8px">
+    <button onclick="installApp()" id="install-btn" style="display:none;background:var(--taxiY);border:none;color:#000;border-radius:8px;padding:5px 9px;font-size:12px;cursor:pointer;font-weight:700">📲 Install</button>
+    <button onclick="toggleTheme()" id="theme-btn" style="background:var(--taxiY);border:none;color:#000;border-radius:8px;padding:5px 9px;font-size:14px;cursor:pointer;font-weight:700">🌙</button>
+    <div id="gps-status" style="font-size:11px;color:var(--mu)"></div>
+    <select id="lang-sel" onchange="setLang(this.value)" style="background:var(--s2);border:1px solid var(--brd);color:var(--tx);border-radius:8px;padding:4px 10px;font-size:15px;font-weight:700;cursor:pointer">
+      <option value="en">🇬🇧 English</option>
+      <option value="bg">🇧🇬 Български</option>
+      <option value="de">🇩🇪 Deutsch</option>
+      <option value="fr">🇫🇷 Français</option>
+      <option value="ru">🇷🇺 Русский</option>
+      <option value="it">🇮🇹 Italiano</option>
+      <option value="es">🇪🇸 Español</option>
+    </select>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab on" onclick="showTab('map')" id="tab-map">🗺 Map</button>
+  <button class="tab" onclick="showTab('list')" id="tab-list"><img src="img/icon-192.png" style="height:14px;vertical-align:-2px;object-fit:contain;margin-right:3px" alt="">Drivers</button>
+  <button class="tab" onclick="showTab('how')" id="tab-how">ℹ How</button>
+  <button class="tab" onclick="showTab('reg')" id="tab-reg">🚕 Join</button>
+</div>
+
+<!-- DRIVERS -->
+<div class="page" id="page-list">
+  <div class="srch">
+    <input type="text" id="srch" placeholder="Search driver, car, area..." oninput="render()">
+  </div>
+  <div class="fw">
+    <div class="fs"><span class="fl">Status</span>
+      <button class="flt on" onclick="sf('all',this)" data-f='all'>All</button>
+      <button class="flt" onclick="sf('online',this)" data-f='online'>🟢 Online</button>
+      <button class="flt" onclick="sf('offline',this)" data-f='offline'>⚫ Offline</button>
+    </div>
+    <div class="fs"><span class="fl">Payment</span>
+      <button class="flt" onclick="sf('revolut',this)" data-f='revolut'>💜 Revolut</button>
+      <button class="flt" onclick="sf('cash',this)" data-f='cash'>💵 Cash</button>
+      <button class="flt" onclick="sf('terminal',this)" data-f='terminal'>💳 Terminal</button>
+    </div>
+    <div class="fs"><span class="fl">Driving Style</span>
+      <button class="flt" onclick="sf('sport',this)" data-f='sport'>🏎 Sport 0-5s</button>
+      <button class="flt" onclick="sf('fast',this)" data-f='fast'>⚡ Fast 5-7s</button>
+      <button class="flt" onclick="sf('normal',this)" data-f='normal'>🚗 Normal</button>
+      <button class="flt" onclick="sf('comfort',this)" data-f='comfort'>🛋 Comfort</button>
+    </div>
+    <div class="fs"><span class="fl">Car Type</span>
+      <button class="flt" onclick="sf('electric',this)" data-f='electric'>⚡ Electric</button>
+      <button class="flt" onclick="sf('sedan',this)" data-f='sedan'>🚗 Sedan</button>
+      <button class="flt" onclick="sf('suv',this)" data-f='suv'>🚙 SUV</button>
+      <button class="flt" onclick="sf('minivan',this)" data-f='minivan'>🚐 Minivan 7+</button>
+      <button class="flt" onclick="sf('luxury',this)" data-f='luxury'>👑 Luxury</button>
+    </div>
+    <div class="fs"><span class="fl">Atmosphere</span>
+      <button class="flt" onclick="sf('silent',this)" data-f='silent'>🤫 Silent ride</button>
+      <button class="flt" onclick="sf('talk',this)" data-f='talk'>💬 Chatty</button>
+      <button class="flt" onclick="sf('calm',this)" data-f='calm'>😌 Calm pace</button>
+      <button class="flt" onclick="sf('music',this)" data-f='music'>🎵 Music OK</button>
+      <button class="flt" onclick="sf('nomusic',this)" data-f='nomusic'>🔇 No Music</button>
+    </div>
+    <div class="fs"><span class="fl">Music Style</span>
+      <button class="flt" onclick="sf('mpop',this)" data-f='mpop'>🎤 Pop</button>
+      <button class="flt" onclick="sf('mrock',this)" data-f='mrock'>🎸 Rock</button>
+      <button class="flt" onclick="sf('mclassical',this)" data-f='mclassical'>🎻 Classical</button>
+      <button class="flt" onclick="sf('mjazz',this)" data-f='mjazz'>🎷 Jazz</button>
+      <button class="flt" onclick="sf('melectronic',this)" data-f='melectronic'>🎧 Electronic</button>
+      <button class="flt" onclick="sf('mchalga',this)" data-f='mchalga'>🎶 Chalga</button>
+    </div>
+    <div class="fs"><span class="fl">Comfort</span>
+      <button class="flt" onclick="sf('nosmoker',this)" data-f='nosmoker'>🚭 No Smoking</button>
+      <button class="flt" onclick="sf('smoking',this)" data-f='smoking'>🚬 Smoking OK</button>
+      <button class="flt" onclick="sf('pet',this)" data-f='pet'>🐾 Pets OK</button>
+      <button class="flt" onclick="sf('child',this)" data-f='child'>👶 Child Seat</button>
+      <button class="flt" onclick="sf('ac',this)" data-f='ac'>❄️ A/C</button>
+      <button class="flt" onclick="sf('wheelchair',this)" data-f='wheelchair'>♿ Wheelchair</button>
+      <button class="flt" onclick="sf('legroom',this)" data-f='legroom'>🦵 Extra Legroom</button>
+      <button class="flt" onclick="sf('panoroof',this)" data-f='panoroof'>🌤 Panoramic Roof</button>
+      <button class="flt" onclick="sf('streaming',this)" data-f='streaming'>🎧 Tidal/Spotify</button>
+      <button class="flt" onclick="sf('usb',this)" data-f='usb'>🔌 USB Charger</button>
+      <button class="flt" onclick="sf('tinted',this)" data-f='tinted'>🕶 Tinted Windows</button>
+    </div>
+    <div class="fs"><span class="fl">Language</span>
+      <button class="flt" onclick="sf('lbg',this)">🇧🇬 BG</button>
+      <button class="flt" onclick="sf('len',this)">🇬🇧 EN</button>
+      <button class="flt" onclick="sf('lde',this)">🇩🇪 DE</button>
+      <button class="flt" onclick="sf('lfr',this)">🇫🇷 FR</button>
+      <button class="flt" onclick="sf('lru',this)">🇷🇺 RU</button>
+      <button class="flt" onclick="sf('lcs',this)">🇨🇿 CS</button>
+      <button class="flt" onclick="sf('lit',this)">🇮🇹 IT</button>
+      <button class="flt" onclick="sf('les',this)">🇪🇸 ES</button>
+      <button class="flt" onclick="sf('ltr',this)">🇹🇷 TR</button>
+      <button class="flt" onclick="sf('lar',this)">🇸🇦 AR</button>
+      <button class="flt" onclick="sf('lzh',this)">🇨🇳 ZH</button>
+    </div>
+    <div class="fs"><span class="fl">Extras</span>
+      <button class="flt" onclick="sf('airport',this)" data-f='airport'>✈️ Airport</button>
+      <button class="flt" onclick="sf('longdist',this)" data-f='longdist'>🛣️ Long Distance</button>
+      <button class="flt" onclick="sf('night',this)" data-f='night'>🌙 Night Rides</button>
+      <button class="flt" onclick="sf('business',this)" data-f='business'>💼 Business</button>
+      <button class="flt" onclick="sf('verified',this)" data-f='verified'>✅ Verified</button>
+      <button class="flt" onclick="sf('top',this)" data-f='top'>⭐ Top Rated</button>
+      <button class="flt" onclick="sf('new',this)" data-f='new'>🆕 New Driver</button>
+    </div>
+  </div>
+  <div class="dlist" id="dlist"></div>
+</div>
+
+<!-- MAP -->
+<div class="page on" id="page-map" style="overflow:hidden">
+  <div id="simple-hero" style="padding:10px 12px;background:linear-gradient(180deg,#111 0%,#1a1a1a 100%);border-bottom:2px solid var(--y,#f0b429)">
+    <button onclick="orderNowSimple()" style="width:100%;padding:11px 12px;font-size:16px;font-weight:900;border:none;border-radius:12px;background:#f0b429;color:#111;cursor:pointer;box-shadow:0 2px 8px #f0b42933">
+      🚕 <span id="hero-btn-txt">ПОРЪЧАЙ СЕГА</span>
+      <div style="font-size:11px;font-weight:600;text-transform:lowercase;color:#3a3a3a;margin-top:2px;letter-spacing:.2px">най-близкото такси</div>
+    </button>
+    <div id="hero-sub" style="font-size:12px;color:#999;text-align:center;margin-top:7px">
+      <a href="#" onclick="document.getElementById('simple-hero').style.display='none';return false" style="color:#f0b429">Още опции ↓</a>
+    </div>
+    <div id="prefs-prompt" style="display:none;margin-top:10px;background:#222;border-radius:12px;padding:12px">
+      <div style="font-size:14px;font-weight:700;color:#eee;margin-bottom:8px">💾 Запази предпочитания за следващия път? (по избор)</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+        <button class="pf" data-k="quiet" onclick="tgPref(this)" style="padding:7px 12px;border-radius:20px;border:1px solid #555;background:#1a1a1a;color:#ccc;cursor:pointer">🤫 Тишина</button>
+        <button class="pf" data-k="talk" onclick="tgPref(this)" style="padding:7px 12px;border-radius:20px;border:1px solid #555;background:#1a1a1a;color:#ccc;cursor:pointer">💬 Разговор</button>
+        <button class="pf" data-k="calm" onclick="tgPref(this)" style="padding:7px 12px;border-radius:20px;border:1px solid #555;background:#1a1a1a;color:#ccc;cursor:pointer">🐢 Спокойно каране</button>
+        <button class="pf" data-k="music" onclick="tgPref(this)" style="padding:7px 12px;border-radius:20px;border:1px solid #555;background:#1a1a1a;color:#ccc;cursor:pointer">🎵 Музика</button>
+        <select id="pf-pax" style="padding:7px;border-radius:10px;background:#1a1a1a;color:#ccc;border:1px solid #555">
+          <option value="">Пътници?</option><option>1</option><option>2</option><option>3</option><option>4</option>
+        </select>
+      </div>
+      <button onclick="savePrefs()" style="padding:9px 18px;border:none;border-radius:10px;background:#22c55e;color:#fff;font-weight:800;cursor:pointer">Запази</button>
+      <button onclick="dismissPrefs()" style="padding:9px 14px;border:none;border-radius:10px;background:transparent;color:#888;cursor:pointer">Не, благодаря</button>
+    </div>
+  </div>
+  <div id="map"></div>
+  <div id="map-list" style="flex:1;overflow-y:auto;padding:8px"></div>
+</div>
+
+<!-- HOW -->
+<div class="page" id="page-how">
+  <div class="scroll-page" id="how-content">
+    <div class="hs"><div class="hn">1</div><div><h3 id="h-t1">Find a Driver</h3><p id="h-p1">Browse verified drivers. Use filters for payment, car type, language, driving style, atmosphere.</p></div></div>
+    <div class="hs"><div class="hn">2</div><div><h3 id="h-t2">Check the Profile</h3><p id="h-p2">See photo, car, prices, languages and driving style. Know exactly who to expect.</p></div></div>
+    <div class="hs"><div class="hn">3</div><div><h3 id="h-t3">Call or Viber Directly</h3><p id="h-p3">Contact your driver directly. No booking fee, no algorithm, no commission.</p></div></div>
+    <div class="hs"><div class="hn" style="background:var(--or);font-size:16px">⚠</div><div><h3 id="h-t4">Tell Your Driver Your Style</h3><p id="h-p4" style="color:var(--or)">Tell your driver how you prefer to ride when you get in — not after the trip. Music, silence, speed, route.</p></div></div>
+    <div class="hs"><div class="hn">5</div><div><h3 id="h-t5">Pay the Driver</h3><p id="h-p5">Cash, Revolut or card terminal. 100% goes to the driver — zero commission.</p></div></div>
+    <div class="hs"><div class="hn">⭐</div><div><h3 id="h-t6">Ratings Are Verified</h3><p id="h-p6">All reviews checked by admin before publishing. Protects drivers from unfair ratings.</p></div></div>
+    <button class="hcta" id="h-cta" onclick="showTab('list')">Find a Driver Now <img src="img/icon-192.png" style="height:16px;vertical-align:-3px;object-fit:contain" alt=""></button>
+  </div>
+</div>
+
+<!-- JOIN -->
+<div class="page" id="page-reg">
+  <div class="scroll-page" id="reg-content">
+    <div style="background:linear-gradient(135deg,#1a1200,#2a1e00);border:2px solid #f5c518;border-radius:13px;padding:14px;margin-bottom:8px;text-align:center">
+      <div id="r-free" style="font-size:20px;font-weight:900;color:#f5c518">🎉 FREE for first 50 drivers per city</div>
+      <div id="r-joinnow" style="font-size:12px;color:#ddd;margin-top:3px">Join now — no payment required</div>
+      <div style="margin-top:10px;background:#0006;border-radius:7px;padding:6px 0">
+        <div id="r-spots" style="font-size:10px;color:#bfb28a;margin-bottom:3px">SPOTS REMAINING</div>
+        <div style="background:#3a3320;border-radius:5px;height:8px;margin:0 20px;overflow:hidden"><div style="background:#f5c518;width:8%;height:100%"></div></div>
+        <div id="r-spotsleft" style="font-size:12px;color:#f5c518;margin-top:3px;font-weight:800">50 / 50 left</div>
+      </div>
+    </div>
+    <div class="jc"><h3 id="r-h1">🚕 Drive with TAXITI</h3><p id="r-p1">The platform where drivers come first. Keep 100% of every ride. Forever.</p>
+      <div class="pbox"><div id="r-after" style="font-size:12px;color:var(--mu);text-decoration:line-through">€20/month after launch</div><div style="font-size:34px;font-weight:900;color:var(--y)">FREE</div><div id="r-beta" style="font-size:12px;color:var(--mu)">Beta — first 50 drivers per city worldwide</div></div>
+    </div>
+    <div class="jc"><h3 id="r-h2">✅ What You Get</h3>
+      <div class="br"><div class="bi2">📍</div><div class="bt"><strong id="r-b1t">Live GPS on Map</strong><br><span id="r-b1s">Clients see you in real time</span></div></div>
+      <div class="br"><div class="bi2">🛡️</div><div class="bt"><strong id="r-b2t">Driver Protection</strong><br><span id="r-b2s">Ratings reviewed before publishing. Bad clients reported.</span></div></div>
+      <div class="br"><div class="bi2">✅</div><div class="bt"><strong id="r-b3t">Verified Badge</strong><br><span id="r-b3s">Vehicle checked against official registries</span></div></div>
+      <div class="br"><div class="bi2">📋</div><div class="bt"><strong id="r-b4t">Digital Documents</strong><br><span id="r-b4s">Carrier permit and logbook included</span></div></div>
+      <div class="br"><div class="bi2">💰</div><div class="bt"><strong id="r-b5t">Zero Commission</strong><br><span id="r-b5s">Every cent from the ride is yours. Always.</span></div></div>
+      <div class="br"><div class="bi2">🌍</div><div class="bt"><strong id="r-b6t">Any City, Any Country</strong><br><span id="r-b6s">Sofia, Zurich, Berlin, London — one platform</span></div></div>
+    </div>
+    <div class="jc"><h3 id="r-h3">📸 What We Need</h3>
+      <div class="br"><div class="bi2">🤳</div><div class="bt"><strong id="r-c1t">Your photo</strong><span id="r-c1s"> — clients know who to expect</span></div></div>
+      <div class="br"><div class="bi2">🚗</div><div class="bt"><strong id="r-c2t">Car photos</strong><span id="r-c2s"> — outside, inside, dashboard</span></div></div>
+      <div class="br"><div class="bi2">📱</div><div class="bt"><strong id="r-c3t">Phone number</strong><span id="r-c3s"> — clients call/Viber directly</span></div></div>
+      <div class="br"><div class="bi2">🏙️</div><div class="bt"><strong id="r-c4t">City and areas</strong><span id="r-c4s"> — where you drive</span></div></div>
+      <p style="font-size:11px;color:var(--mu2);margin-top:10px;line-height:1.5;border-top:1px solid var(--brd);padding-top:8px"><span id="r-gdpr">🔒 <strong style="color:var(--mu)">GDPR:</strong> Only public profile data collected. No ID, no address, no financials. Delete anytime. Never sold to third parties. If you allow location, an anonymous coarse point (~100 m) may be shown to drivers as live demand for up to 10 minutes — no identity attached.</span></p>
+    </div>
+    <div class="jc"><h3 id="r-h4">📱 How to Join</h3>
+      <p id="r-p2" style="margin-bottom:10px">Driver registration via our dedicated driver app. Under 5 minutes.</p>
+      <div style="background:var(--s3);border:1px solid var(--brd);border-radius:10px;padding:10px;text-align:center;margin-bottom:8px">
+        <div id="r-soon" style="font-size:13px;color:var(--mu)">Driver app — coming soon</div>
+        <div id="r-notify" style="font-size:11px;color:var(--mu2);margin-top:2px">Leave your contact and we will notify you</div>
+      </div>
+      <button class="jbtn" id="r-joinbtn" onclick="window.open('mailto:register@TAXITI?subject=Driver%20Registration%20-%20TAXITI&body=Name:%0APhone:%0ACity:%0ACar:')">Join Waitlist — Free <img src="img/icon-192.png" style="height:16px;vertical-align:-3px;object-fit:contain" alt=""></button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+  <div class="mb">
+    <button class="mc" onclick="closeMod()">✕</button>
+    <div class="mav" id="mav">🚗</div>
+    <div class="mn" id="mname"></div>
+    <div class="mc2" id="mcar2"></div>
+    <div style="text-align:center;margin-bottom:8px" id="mstars"></div>
+    <div class="sbox" id="mstyle"></div>
+    <div class="mh" id="mh-price">Price</div><div id="mprice" style="font-size:14px;font-weight:700;color:var(--y)"></div>
+    <div class="mh" id="mh-cardet">Car Details</div><div id="mcardet"></div>
+    <div class="mh" id="mh-photos" style="display:none">Car Photos</div><div class="mphotos" id="mphotos"></div>
+    <div class="mh" id="mh-pay">Payment</div><div id="mpay"></div>
+    <div class="mh" id="mh-langs">Languages</div><div id="mlangs"></div>
+    <div class="mh" id="mh-opts">Options &amp; Atmosphere</div><div id="mopts" style="display:flex;flex-wrap:wrap;gap:4px"></div>
+    <div class="mh" id="mh-areas">Areas</div><div id="mareas" style="font-size:13px;color:var(--mu)"></div>
+    <div class="mh" id="mh-about">About the Driver</div><div id="mbio" style="font-size:13px;color:var(--mu);line-height:1.6"></div>
+    <div class="mh" id="mh-order">Before You Order</div>
+    <div style="margin-bottom:8px">
+      <label style="font-size:11px;color:var(--mu);font-weight:700;text-transform:uppercase;display:block;margin-bottom:4px" id="lbl-when">🕒 When</label>
+      <div style="display:flex;gap:6px;margin-bottom:6px">
+        <button class="pref-btn on" id="btn-when-now" onclick="setWhenMode('now')" style="flex:1">Now</button>
+        <button class="pref-btn" id="btn-when-later" onclick="setWhenMode('later')" style="flex:1">📅 Schedule</button>
+      </div>
+      <div id="schedule-fields" style="display:none;gap:6px;margin-bottom:6px">
+        <input type="date" id="order-date" style="flex:1;background:var(--s2);border:1px solid var(--brd);color:var(--tx);border-radius:8px;padding:7px;font-size:13px">
+        <select id="order-time-h" style="flex:1;background:var(--s2);border:1px solid var(--brd);color:var(--tx);border-radius:8px;padding:7px;font-size:13px"></select>
+        <span style="display:flex;align-items:center;color:var(--mu);font-weight:700">:</span>
+        <select id="order-time-m" style="flex:1;background:var(--s2);border:1px solid var(--brd);color:var(--tx);border-radius:8px;padding:7px;font-size:13px"></select>
+      </div>
+      <div id="schedule-warning" style="display:none;background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.3);color:var(--or);border-radius:9px;padding:8px 10px;font-size:12px;line-height:1.5;margin-top:6px">⚠️ This is a booking request, not a confirmed ride. Wait for the driver to confirm by call or message before considering it booked.</div>
+    </div>
+    <div style="margin-bottom:8px">
+      <label style="font-size:11px;color:var(--mu);font-weight:700;text-transform:uppercase;display:block;margin-bottom:4px" id="lbl-pax">👥 Passengers</label>
+      <select id="order-pax" onchange="checkPaxWarning()" style="width:100%;background:var(--s2);border:1px solid var(--brd);color:var(--tx);border-radius:8px;padding:7px;font-size:13px">
+        <option value="2" id="opt-pax-2">1–2</option>
+        <option value="3" id="opt-pax-3">3</option>
+        <option value="4" id="opt-pax-4">4</option>
+      </select>
+    </div>
+    <div id="pax-warning" style="display:none;background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.3);color:var(--or);border-radius:9px;padding:8px 10px;font-size:12px;line-height:1.5;margin-bottom:8px"></div>
+    <div id="order-prefs" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+      <button class="pref-btn" id="pb-hurry" data-pref="hurry" onclick="togglePref(this,'hurry')">⏱ I'm in a hurry</button>
+      <button class="pref-btn" id="pb-relax" data-pref="relax" onclick="togglePref(this,'relax')">😌 Take it easy</button>
+      <button class="pref-btn" id="pb-silent" data-pref="silent" onclick="togglePref(this,'silent')">🤫 Prefer silence</button>
+      <button class="pref-btn" id="pb-talk" data-pref="talk" onclick="togglePref(this,'talk')">💬 Happy to chat</button>
+      <button class="pref-btn" id="pb-nomusic" data-pref="nomusic" onclick="togglePref(this,'nomusic')">🔇 No music</button>
+      <button class="pref-btn" id="pb-ac" data-pref="ac" onclick="togglePref(this,'ac')">❄️ A/C please</button>
+      <button class="pref-btn" id="pb-luggage" data-pref="luggage" onclick="togglePref(this,'luggage');checkPaxWarning()">🧳 Have luggage</button>
+    </div>
+    <div style="margin-bottom:8px">
+      <label style="font-size:11px;color:var(--mu);font-weight:700;text-transform:uppercase;display:block;margin-bottom:4px" id="lbl-musicstyle">🎵 Preferred music</label>
+      <select id="order-music" style="width:100%;background:var(--s2);border:1px solid var(--brd);color:var(--tx);border-radius:8px;padding:7px;font-size:13px">
+        <option value="" id="opt-music-none">No preference</option>
+        <option value="pop" id="opt-music-pop">🎤 Pop</option>
+        <option value="rock" id="opt-music-rock">🎸 Rock</option>
+        <option value="classical" id="opt-music-classical">🎻 Classical</option>
+        <option value="jazz" id="opt-music-jazz">🎷 Jazz</option>
+        <option value="electronic" id="opt-music-electronic">🎧 Electronic</option>
+        <option value="chillout" id="opt-music-chillout">🌅 Chillout</option>
+        <option value="lounge" id="opt-music-lounge">🛋 Lounge</option>
+        <option value="chalga" id="opt-music-chalga">🎶 Chalga</option>
+        <option value="none" id="opt-music-nopref">🔇 No music</option>
+      </select>
+    </div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:11px;color:var(--mu);font-weight:700;text-transform:uppercase;display:block;margin-bottom:4px" id="lbl-tip">💰 Planned tip (optional)</label>
+      <select id="order-tip" style="width:100%;background:var(--s2);border:1px solid var(--brd);color:var(--tx);border-radius:8px;padding:7px;font-size:13px">
+        <option value="" id="opt-tip-none">No tip planned</option>
+        <option value="small" id="opt-tip-small">A small tip</option>
+        <option value="fair" id="opt-tip-fair">A fair tip — thanks for coming far</option>
+        <option value="generous" id="opt-tip-generous">A generous tip</option>
+      </select>
+    </div>
+    <div style="margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mu);margin-bottom:6px">
+        <span>📍</span><span id="from-text" style="flex:1">Pickup: my location (GPS)</span>
+        <button onclick="openLocPicker('from')" id="btn-from-change" style="background:none;border:1px solid var(--brd);color:var(--mu);border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer">Change</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mu)">
+        <span>🏁</span><span id="to-text" style="flex:1">Destination: not set (optional)</span>
+        <button onclick="openLocPicker('to')" id="btn-to-change" style="background:none;border:1px solid var(--brd);color:var(--mu);border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer">Set</button>
+      </div>
+    </div>
+    <div id="loc-picker" style="display:none;margin-bottom:8px">
+      <div id="loc-picker-map" style="height:180px;border-radius:10px;overflow:hidden;border:1px solid var(--brd);margin-bottom:6px"></div>
+      <div style="font-size:11px;color:var(--mu);margin-bottom:6px;text-align:center" id="loc-picker-hint">📌 Tap the map to set the point, or paste a Google Maps link below</div>
+      <input type="text" id="loc-picker-link" placeholder="Paste Google Maps link (optional)" oninput="parseMapsLink()" style="width:100%;background:var(--s2);border:1px solid var(--brd);color:var(--tx);border-radius:8px;padding:7px;font-size:12px;margin-bottom:6px">
+      <div style="display:flex;gap:6px">
+        <button onclick="useGpsForPicker()" id="btn-picker-gps" style="flex:1;background:var(--s2);border:1px solid var(--brd);color:var(--tx);border-radius:8px;padding:7px;font-size:12px;cursor:pointer">📍 My GPS</button>
+        <button onclick="confirmLocPicker()" style="flex:1;background:var(--taxiY);border:none;color:#000;border-radius:8px;padding:7px;font-size:12px;font-weight:700;cursor:pointer" id="btn-picker-confirm">✅ Confirm</button>
+        <button onclick="closeLocPicker()" style="flex:0 0 44px;background:var(--s2);border:1px solid var(--brd);color:var(--mu);border-radius:8px;padding:7px;font-size:12px;cursor:pointer">✖</button>
+      </div>
+    </div>
+    <div class="mbtns" style="flex-wrap:wrap">
+      <button class="mcall" id="btn-call" onclick="doCall()" style="flex:1 1 100%">📞 Call</button>
+      <button class="mvib" id="btn-vibord" onclick="doVibOrder()" style="flex:1">💬 Viber</button>
+      <button class="mvib" id="btn-waord" onclick="doWAOrder()" style="flex:1;background:#25D366">🟢 WhatsApp</button>
+      <button class="mvib" id="btn-smsord" onclick="doSMSOrder()" style="flex:1;background:#4a90d9">✉️ SMS</button>
+    </div>
+    <button onclick="openRate()" id="rate-btn" style="width:100%;margin-top:8px;background:var(--s3);border:1px solid var(--brd);color:var(--mu);border-radius:9px;padding:9px;font-size:13px;cursor:pointer">⭐ Rate this driver</button>
+  </div>
+</div>
+
+<div class="imglb" id="imglb" onclick="hideImg()"><img id="imglb-img" src="" alt=""></div>
+
+<script>
+var WORKER='https://mvr-proxy.mihov-emil.workers.dev';
+var DRIVERS=[{
+  "id":1,"name":"Emil M.","name_bg":"Емил М.","bio_key":"emilBio",
+  "avatar":"img/emil_avatar.jpg",
+  "photos":["img/emil_car_front.jpg","img/emil_car_nevski.jpg","img/emil_interior.jpg"],
+  "city":"sofia","lat":42.6977,"lng":23.3219,
+  "car":"Tesla Model S","plate":"EA 0526 AB",
+  "car_type":"sedan","accel":4.2,"seats":4,
+  "online":false,"rating":5.0,"reviews":0,
+  "payment":["revolut","cash","terminal"],
+  "langs":["bg","en","cs","ru"],
+  "electric":true,"smoking":false,"nosmoker":true,
+  "petfriendly":"ask","childok":false,
+  "sport":true,"fast":true,"comfort":true,
+  "minivan":false,"suv":false,"luxury":false,
+  "ac":true,"music":true,"chalga":"paid","nomusic":false,
+  "silent_ok":true,"talk_ok":true,"calm_ok":true,
+  "terminal":true,
+  "music_pop":false,"music_chalga":false,"music_rock":false,"music_classical":false,"music_jazz":true,"music_electronic":true,"music_chillout":true,"music_lounge":true,
+  "airport":true,"longdist":"ask","night":"ask","business":true,"legroom":true,"panoroof":true,"streaming":true,"usb":true,"tinted":true,
+  "wheelchair":"ask","verified":true,
+  "areas":"Sofia — Center, Airport, Ring Road, All districts",
+  "phone":"+359878592888",
+  "price":"0.75 EUR/km day / 0.85 EUR/km night / Start 1.49 EUR",
+  "tariff":{"start":1.49,"km_day":0.75,"km_night":0.85},
+  "bio":"Non-smoker. IT specialist. Lived abroad. No animals, food or drinks in the car. Happy to talk or stay silent. Please speak up if you want a specific route or feel unwell."
+},{
+  "id":2,"gps_id":"359897644448","name":"Petar M.","name_bg":"Петър М.","bio_key":"petarBio",
+  "avatar":"img/petar_avatar.jpg",
+  "photos":["img/petar_car_front.jpg","img/petar_interior.jpg","img/petar_rear_seats.jpg","img/petar_car_lights.jpg"],
+  "city":"sofia","lat":42.6820,"lng":23.3450,
+  "car":"VW ID.4","plate":"EA 6631 AE",
+  "car_type":"suv","accel":8.5,"seats":4,
+  "online":false,"rating":5.0,"reviews":0,
+  "payment":["revolut","cash","terminal"],
+  "langs":["bg","en","fr"],
+  "electric":true,"smoking":false,"nosmoker":true,
+  "petfriendly":true,"childok":false,
+  "sport":false,"fast":false,"comfort":true,
+  "minivan":false,"suv":true,"luxury":false,
+  "ac":true,"music":true,"chalga":false,"nomusic":false,
+  "silent_ok":true,"talk_ok":true,"calm_ok":true,
+  "terminal":true,
+  "music_pop":true,"music_chalga":false,"music_rock":true,"music_classical":true,"music_jazz":true,"music_electronic":true,"music_chillout":true,"music_lounge":true,
+  "airport":true,"longdist":"ask","night":"ask","business":false,"legroom":true,"panoroof":true,"streaming":true,"usb":true,"tinted":false,
+  "wheelchair":"ask","verified":true,
+  "areas":"Sofia — Center, Airport, Ring Road, All districts",
+  "phone":"+359897644448",
+  "price":"0.75 EUR/km day / 0.85 EUR/km night / Start 1.49 EUR",
+  "tariff":{"start":1.50,"start_night":1.70,"km_day":0.75,"km_night":0.85},"tariff_photo":"img/petar_tariff.jpg",
+  "bio":"Non-smoker. IT specialist. Calm driving. Music on request via YouTube. 540L trunk. Small pets welcome."
+}];
+
+
+var T={
+  en:{
+    logo:'🐟 TAXITI',
+    tagline:'Find Your Driver Directly',
+    tabMap:'🗺 Map',tabList:'Drivers',tabHow:'ℹ How',tabReg:'🚕 Join',
+    search:'Search driver, car, area...',
+    sStatus:'Status',sPayment:'Payment',sStyle:'Driving Style',sCar:'Car Type',
+    sAtm:'Atmosphere',sComfort:'Comfort',sLang:'Language',sExtras:'Extras',
+    fAll:'All',fOnline:'🟢 Online',fOffline:'⚫ Offline',
+    fRevolut:'💜 Revolut',fCash:'💵 Cash',fTerminal:'💳 Terminal',
+    fSport:'🏎 Sport 0-5s',fFast:'⚡ Fast 5-7s',fNormal:'🚗 Normal',fComfort:'🛋 Comfort',
+    fElectric:'⚡ Electric',fSedan:'🚗 Sedan',fSuv:'🚙 SUV',fMinivan:'🚐 Minivan 7+',fLuxury:'👑 Luxury',
+    fSilent:'🤫 Silent',fTalk:'💬 Chatty',fMusic:'🎵 Music OK',fChalga:'🎶 Chalga OK',fNomusic:'🔇 No Music',
+    fNosmoker:'🚭 No Smoking',fSmoking:'🚬 Smoking OK',fPet:'🐾 Pets OK',fChild:'👶 Child Seat',fAc:'❄️ A/C',fWheel:'♿ Wheelchair',fLegroom:'🦵 Extra Legroom',fPanoroof:'🌤 Panoramic Roof',fStreaming:'🎧 Tidal/Spotify',fUsb:'🔌 USB Charger',fTinted:'🕶 Tinted Windows',
+    fAirport:'✈️ Airport',fLong:'🛣️ Long Distance',fNight:'🌙 Night',fBiz:'💼 Business',fVerified:'✅ Verified',fTop:'⭐ Top Rated',fNew:'🆕 New',
+    btnCall:'📞 Call',btnVib:'💬 Viber',
+    noDrivers:'No drivers found with this filter',
+    online:'Online',offline:'Offline',
+    howTitle:'How it works',joinTitle:'Join as Driver',
+    mVerified:"✓ Verified",mReviews:"reviews",mWarn:"Tell your driver your preferred pace when you get in",mCalmOpt:"Calm driving available on request",mCarDet:"Car Details",mPhotos:"Car Photos",onRequest:"on request",extraFee:"extra charge",mType:"Type",mSeats:"Seats",mPassengers:"passengers",mAccel:"0-100 km/h",mElectric:"Electric",mAC:"A/C",mYes:"Yes",mPayment:"Payment",mLangs:"Languages",mOpts:"Options & Atmosphere",mPrice:"Price",mAreas:"Areas",mAbout:"About the Driver",mRate:"Rate this driver",mViewProfile:"View Profile",stSport:'Sport',stFast:'Fast',stComfort:'Comfort',stNormal:'Normal',stAccel:'s 0-100',stSmooth:'Smooth ride',stBalanced:'Balanced',onlineNow:'Online now',lastSeen:'Last seen',agoNow:'just now',agoM:'m ago',agoH:'h ago',agoD:'d ago',prDay:'day',prNight:'night',prStart:'start',emilAreas:'Sofia — Center, Airport, Ring Road, all districts',petarBio:'Non-smoker. IT specialist. Calm, smooth driving. Music on request — your choice via YouTube. 540L trunk. Small pets welcome.',
+    mBeforeOrder:"Before You Order",
+    lblMusic:"🎵 Preferred music",lblTip:"💰 Planned tip (optional)",lblPax:"👥 Passengers",paxOpt2:"1–2",paxOpt3:"3",paxOpt4:"4",orderPax:"• Passengers:",lblWhen:"🕒 When",btnNow:"Now",btnSchedule:"📅 Schedule",pickupGps:"Pickup: my location (GPS)",pickupCustom:"Pickup: custom point set",destSet:"Destination: point set",destNotSet:"Destination: not set (optional)",btnChange:"Change",btnSet:"Set",locPickerHint:"📌 Tap the map to set the point, or paste a Google Maps link below",locPickerPlaceholder:"Paste Google Maps link (optional)",orderPickup:"📍 Pickup location:",orderDest:"🏁 Destination:",scheduleWarn:"⚠️ This is a booking request, not a confirmed ride. Wait for the driver to confirm by call or message before considering it booked.",orderWhen:"📅 Requested time:",orderConfirmNote:"⚠️ Please confirm this booking by replying.",orderNow:"🕒 Now (ASAP)",paxWarn:"⚠️ 3-4 passengers with luggage — please call first to confirm everything fits comfortably.",paxWarnMsg:"⚠️ 3-4 passengers with luggage — please confirm fit before booking",
+    optNoPref:"No preference",optPop:"🎤 Pop",optChalga:"🎶 Chalga",optRock:"🎸 Rock",optClassical:"🎻 Classical",optJazz:"🎷 Jazz",optElectronic:"🎧 Electronic",optNoMusic:"🔇 No music",optNoTip:"No tip planned",optSmallTip:"A small tip",optFairTip:"A fair tip — thanks for coming far",optGenTip:"A generous tip",
+    sumFast:"Can drive fast",sumCalm:"or calmly — your choice",sumTalkSilent:"happy to talk or stay silent",sumTalk:"enjoys conversation",sumSilent:"prefers quiet rides",sumMusic:"plays",
+    pbHurry:"⏱ I'm in a hurry",pbRelax:"😌 Take it easy",pbSilent:"🤫 Prefer silence",pbTalk:"💬 Happy to chat",pbNomusic:"🔇 No music",pbAc:"❄️ A/C please",pbLuggage:"🧳 Have luggage",btnCallM:"📞 Call",btnVibOrd:"💬 Order via Viber",locDefault:"Location will be shared with driver",
+    hT1:"Find a Driver",hP1:"Browse verified drivers. Use filters for payment, car type, language, driving style, atmosphere.",hT2:"Check the Profile",hP2:"See photo, car, prices, languages and driving style. Know exactly who to expect.",hT3:"Call or Viber Directly",hP3:"Contact your driver directly. No booking fee, no algorithm, no commission.",hT4:"Tell Your Driver Your Style",hP4:"Tell your driver how you prefer to ride when you get in. Music, silence, speed, route.",hT5:"Pay the Driver",hP5:"Cash, Revolut or card terminal. 100% goes to the driver, zero commission.",hT6:"Ratings Are Verified",hP6:"All reviews checked by admin before publishing. Protects drivers from unfair ratings.",hCta:"Find a Driver Now",
+    rFree:"FREE for first 50 drivers per city",rJoinnow:"Join now, no payment required",rSpots:"SPOTS REMAINING",rSpotsleft:"50 / 50 left",rH1:"Drive with TAXITI",rP1:"The platform where drivers come first. Keep 100% of every ride. Forever.",rAfter:"20 EUR/month after launch",rBeta:"Beta, first 50 drivers per city worldwide",rH2:"What You Get",rB1t:"Live GPS on Map",rB1s:"Clients see you in real time",rB2t:"Driver Protection",rB2s:"Ratings reviewed before publishing. Bad clients reported.",rB3t:"Verified Badge",rB3s:"Vehicle checked against official registries",rB4t:"Digital Documents",rB4s:"Carrier permit and logbook included",rB5t:"Zero Commission",rB5s:"Every cent from the ride is yours. Always.",rB6t:"Any City, Any Country",rB6s:"Sofia, Zurich, Berlin, London, one platform",rH3:"What We Need",rC1t:"Your photo",rC1s:" - clients know who to expect",rC2t:"Car photos",rC2s:" - outside, inside, dashboard",rC3t:"Phone number",rC3s:" - clients call/Viber directly",rC4t:"City and areas",rC4s:" - where you drive",rGdpr:"GDPR: Only public profile data collected. No ID, no address, no financials. Delete anytime. Never sold to third parties. If you allow location, an anonymous coarse point (~100 m) may be shown to drivers as live demand for up to 10 minutes — no identity attached.",rH4:"How to Join",rP2:"Driver registration via our dedicated driver app. Under 5 minutes.",rSoon:"Driver app, coming soon",rNotify:"Leave your contact and we will notify you",rJoinbtn:"Join Waitlist, Free",
+    emilBio:"Non-smoker. IT specialist. Lived abroad. No animals, food or drinks in the car. Happy to talk or stay silent. Please speak up if you want a specific route or feel unwell."
+  ,
+    orderHeader:'🚕 TAXITI order request',
+    orderPrefs:'My preferences:',
+    orderMusic:'• Music:',
+    orderLocation:'📍 My location:',
+    orderNoLocation:'📍 Location not shared — please ask for pickup address'},
+  bg:{
+    logo:'🐟 TAXITI',
+    tagline:'Намери си шофьор директно',
+    tabMap:'🗺 Карта',tabList:'Шофьори',tabHow:'ℹ Как',tabReg:'🚕 Присъедини се',
+    search:'Търси шофьор, кола, район...',
+    sStatus:'Статус',sPayment:'Плащане',sStyle:'Стил на каране',sCar:'Тип кола',
+    sAtm:'Атмосфера',sComfort:'Комфорт',sLang:'Език',sExtras:'Допълнителни',
+    fAll:'Всички',fOnline:'🟢 Онлайн',fOffline:'⚫ Офлайн',
+    fRevolut:'💜 Revolut',fCash:'💵 Кеш',fTerminal:'💳 Терминал',
+    fSport:'🏎 Спортно 0-5s',fFast:'⚡ Бързо 5-7s',fNormal:'🚗 Нормално',fComfort:'🛋 Комфорт',
+    fElectric:'⚡ Електрик',fSedan:'🚗 Седан',fSuv:'🚙 SUV',fMinivan:'🚐 Миниван 7+',fLuxury:'👑 Луксозно',
+    fSilent:'🤫 Тишина',fTalk:'💬 Разговори',fMusic:'🎵 Музика OK',fChalga:'🎶 Чалга OK',fNomusic:'🔇 Без музика',
+    fNosmoker:'🚭 Непушач',fSmoking:'🚬 Пушене OK',fPet:'🐾 Домашни',fChild:'👶 Детска седалка',fAc:'❄️ Климатик',fWheel:'♿ Инвалидна количка',fLegroom:'🦵 Просторно за краката',fPanoroof:'🌤 Панорамен покрив',fStreaming:'🎧 Tidal/Spotify',fUsb:'🔌 USB зарядно',fTinted:'🕶 Затъмнени стъкла',
+    fAirport:'✈️ Летище',fLong:'🛣️ Дълъг маршрут',fNight:'🌙 Нощни',fBiz:'💼 Бизнес',fVerified:'✅ Верифициран',fTop:'⭐ Топ рейтинг',fNew:'🆕 Нов',
+    btnCall:'📞 Обади се',btnVib:'💬 Viber',
+    noDrivers:'Няма намерени шофьори',
+    online:'Онлайн',offline:'Офлайн',
+    howTitle:'Как работи',joinTitle:'Присъедини се',
+    mVerified:"✓ Верифициран",mReviews:"отзива",mWarn:"Кажи на шофьора предпочитания темп при качване",mCalmOpt:"Спокойно каране при поискване",mCarDet:"Детайли на колата",mPhotos:"Снимки на колата",onRequest:"по договаряне",extraFee:"доплащане",mType:"Тип",mSeats:"Места",mPassengers:"пътници",mAccel:"0-100 км/ч",mElectric:"Електрическа",mAC:"Климатик",mYes:"Да",mPayment:"Плащане",mLangs:"Езици",mOpts:"Опции и атмосфера",mPrice:"Цена",mAreas:"Райони",mAbout:"За шофьора",mRate:"Оцени шофьора",mViewProfile:"Виж профил",stSport:'Спорт',stFast:'Бърз',stComfort:'Комфорт',stNormal:'Нормален',stAccel:'с 0-100',stSmooth:'Плавно каране',stBalanced:'Балансиран',onlineNow:'Онлайн сега',lastSeen:'Последно',agoNow:'току-що',agoM:' мин',agoH:' ч',agoD:' дни',prDay:'ден',prNight:'нощ',prStart:'начална',emilAreas:'София — Център, Летище, Околовръстно, всички квартали',petarBio:'Непушач. IT специалист. Спокойно, плавно каране. Музика по желание на клиента — ваш избор през YouTube. Багажник 540 л. Качвам малки домашни любимци.',
+    mBeforeOrder:"Преди да поръчаш",
+    lblMusic:"🎵 Предпочитана музика",lblTip:"💰 Планиран бакшиш (по избор)",lblPax:"👥 Пътници",paxOpt2:"1–2",paxOpt3:"3",paxOpt4:"4",orderPax:"• Пътници:",lblWhen:"🕒 Кога",btnNow:"Сега",btnSchedule:"📅 Резервирай",pickupGps:"Взимане: моята локация (GPS)",pickupCustom:"Взимане: зададена точка",destSet:"Дестинация: зададена",destNotSet:"Дестинация: не е зададена (по избор)",btnChange:"Смени",btnSet:"Задай",locPickerHint:"📌 Докосни картата, за да зададеш точка, или постави Google Maps линк отдолу",locPickerPlaceholder:"Постави Google Maps линк (по избор)",orderPickup:"📍 Място за взимане:",orderDest:"🏁 Дестинация:",scheduleWarn:"⚠️ Това е заявка за резервация, не потвърдено возене. Изчакайте шофьорът да потвърди с обаждане или съобщение, преди да смятате возенето за уговорено.",orderWhen:"📅 Заявено време:",orderConfirmNote:"⚠️ Моля, потвърдете тази резервация с отговор.",orderNow:"🕒 Сега (веднага)",paxWarn:"⚠️ 3-4 пътници с багаж — моля, обадете се първо, за да потвърдим, че всичко ще се събере комфортно.",paxWarnMsg:"⚠️ 3-4 пътници с багаж — моля потвърдете преди поръчка",
+    optNoPref:"Без предпочитание",optPop:"🎤 Поп",optChalga:"🎶 Чалга",optRock:"🎸 Рок",optClassical:"🎻 Класика",optJazz:"🎷 Джаз",optElectronic:"🎧 Електронна",optNoMusic:"🔇 Без музика",optNoTip:"Без бакшиш",optSmallTip:"Малък бакшиш",optFairTip:"Достоен бакшиш — благодаря за дългия път",optGenTip:"Щедър бакшиш",
+    sumFast:"Може да кара бързо",sumCalm:"или спокойно — твой избор",sumTalkSilent:"може да говори или да мълчи",sumTalk:"обича разговори",sumSilent:"предпочита тишина",sumMusic:"пуска",
+    pbHurry:"⏱ Бързам",pbRelax:"😌 Спокойно",pbSilent:"🤫 Предпочитам тишина",pbTalk:"💬 Обичам разговори",pbNomusic:"🔇 Без музика",pbAc:"❄️ Климатик моля",pbLuggage:"🧳 Имам багаж",btnCallM:"📞 Обади се",btnVibOrd:"💬 Поръчай през Viber",locDefault:"Локацията ще се сподели с шофьора",
+    hT1:"Намери шофьор",hP1:"Разгледай верифицирани шофьори. Филтрирай по плащане, тип кола, език, стил на каране, атмосфера.",hT2:"Провери профила",hP2:"Виж снимка, кола, цени, езици и стил на каране. Знай точно кого да очакваш.",hT3:"Обади се или пиши във Viber",hP3:"Свържи се директно с шофьора. Без такса за резервация, без алгоритъм, без комисионна.",hT4:"Кажи на шофьора стила си",hP4:"Кажи на шофьора как предпочиташ да пътуваш още при качване. Музика, тишина, скорост, маршрут.",hT5:"Плати на шофьора",hP5:"В брой, Revolut или терминал. 100% отива при шофьора, нула комисионна.",hT6:"Оценките са верифицирани",hP6:"Всички отзиви се проверяват от администратор преди публикуване. Защитава шофьорите от нечестни оценки.",hCta:"Намери шофьор сега",
+    rFree:"БЕЗПЛАТНО за първите 50 шофьора на град",rJoinnow:"Присъедини се сега, без плащане",rSpots:"ОСТАВАЩИ МЕСТА",rSpotsleft:"50 / 50 свободни",rH1:"Карай с TAXITI",rP1:"Платформата, в която шофьорите са на първо място. Запази 100% от всеки курс. Завинаги.",rAfter:"20 EUR/месец след старта",rBeta:"Бета, първите 50 шофьора на град по света",rH2:"Какво получаваш",rB1t:"GPS на живо на картата",rB1s:"Клиентите те виждат в реално време",rB2t:"Защита на шофьора",rB2s:"Оценките се проверяват преди публикуване. Лоши клиенти се докладват.",rB3t:"Верифициран знак",rB3s:"Колата е проверена спрямо официалните регистри",rB4t:"Дигитални документи",rB4s:"Документ за превозвач и пътна книжка са включени",rB5t:"Нула комисионна",rB5s:"Всеки стотинка от курса е твоя. Винаги.",rB6t:"Всеки град, всяка държава",rB6s:"София, Цюрих, Берлин, Лондон, една платформа",rH3:"Какво ни трябва",rC1t:"Твоя снимка",rC1s:" - клиентите знаят кого да очакват",rC2t:"Снимки на колата",rC2s:" - отвън, отвътре, таблото",rC3t:"Телефонен номер",rC3s:" - клиентите се обаждат или пишат директно",rC4t:"Град и райони",rC4s:" - къде каращ",rGdpr:"GDPR: Събират се само данните на публичния профил. Без лична карта, без адрес, без финанси. Изтриване по всяко време. Никога не се продава на трети страни.",rH4:"Как да се присъединиш",rP2:"Регистрацията на шофьор е през нашия специален шофьорски апп. Под 5 минути.",rSoon:"Шофьорски апп, очаквайте скоро",rNotify:"Остави контакт и ще те уведомим",rJoinbtn:"Запиши се в списъка, безплатно",
+    emilBio:"Непушач. IT специалист. Живял в чужбина. Без животни, храна или напитки в колата. С удоволствие ще говоря или ще мълча. Моля, кажи ако искаш конкретен маршрут или не се чувстваш добре."
+  ,
+    orderHeader:'🚕 TAXITI заявка за такси',
+    orderPrefs:'Предпочитания:',
+    orderMusic:'• Музика:',
+    orderLocation:'📍 Моята локация:',
+    orderNoLocation:'📍 Локацията не е споделена — попитайте за адрес',
+    prefHurry:'Бързам',
+    prefRelax:'Моля, карайте спокойно',
+    prefSilent:'Предпочитам тишина',
+    prefTalk:'Готов за разговор',
+    prefMusic:'Музика, моля',
+    prefNomusic:'Без музика',
+    prefAc:'Климатик, моля',
+    prefLuggage:'Имам багаж',
+    musicPop:'Поп',
+    musicChalga:'Чалга',
+    musicRock:'Рок',
+    musicClassical:'Класика',
+    musicJazz:'Джаз',
+    musicElectronic:'Електронна',
+    musicChillout:'Chillout',
+    musicLounge:'Lounge',
+    musicNone:'Без музика',
+    tipSmall:'Малък бакшиш',
+    tipFair:'Благодаря, че дойдохте отдалеч',
+    tipGenerous:'Щедър бакшиш'},
+  de:{
+    logo:'🐟 TAXITI',
+    tagline:'Finde deinen Fahrer direkt',
+    tabMap:'🗺 Karte',tabList:'Fahrer',tabHow:'ℹ Wie',tabReg:'🚕 Beitreten',
+    search:'Fahrer, Auto, Gebiet suchen...',
+    sStatus:'Status',sPayment:'Zahlung',sStyle:'Fahrstil',sCar:'Autotyp',
+    sAtm:'Atmosphäre',sComfort:'Komfort',sLang:'Sprache',sExtras:'Extras',
+    fAll:'Alle',fOnline:'🟢 Online',fOffline:'⚫ Offline',
+    fRevolut:'💜 Revolut',fCash:'💵 Bar',fTerminal:'💳 Terminal',
+    fSport:'🏎 Sport 0-5s',fFast:'⚡ Schnell 5-7s',fNormal:'🚗 Normal',fComfort:'🛋 Komfort',
+    fElectric:'⚡ Elektro',fSedan:'🚗 Limousine',fSuv:'🚙 SUV',fMinivan:'🚐 Minivan 7+',fLuxury:'👑 Luxus',
+    fSilent:'🤫 Leise',fTalk:'💬 Gesprächig',fMusic:'🎵 Musik OK',fChalga:'🎶 Chalga OK',fNomusic:'🔇 Keine Musik',
+    fNosmoker:'🚭 Nichtraucher',fSmoking:'🚬 Rauchen OK',fPet:'🐾 Haustiere',fChild:'👶 Kindersitz',fAc:'❄️ Klima',fWheel:'♿ Rollstuhl',fLegroom:'🦵 Viel Beinfreiheit',fPanoroof:'🌤 Panoramadach',fStreaming:'🎧 Tidal/Spotify',fUsb:'🔌 USB-Ladegerät',fTinted:'🕶 Getönte Scheiben',
+    fAirport:'✈️ Flughafen',fLong:'🛣️ Fernfahrt',fNight:'🌙 Nacht',fBiz:'💼 Business',fVerified:'✅ Verifiziert',fTop:'⭐ Top',fNew:'🆕 Neu',
+    btnCall:'📞 Anrufen',btnVib:'💬 Viber',
+    noDrivers:'Keine Fahrer gefunden',
+    online:'Online',offline:'Offline',
+    mVerified:"✓ Verifiziert",mReviews:"Bewertungen",mWarn:"Sagen Sie Ihrem Fahrer Ihr bevorzugtes Tempo beim Einsteigen",mCalmOpt:"Ruhiges Fahren auf Anfrage",mCarDet:"Fahrzeugdetails",mPhotos:"Fotos vom Auto",onRequest:"auf Anfrage",extraFee:"gegen Aufpreis",mType:"Typ",mSeats:"Sitze",mPassengers:"Passagiere",mAccel:"0-100 km/h",mElectric:"Elektrisch",mAC:"Klima",mYes:"Ja",mPayment:"Zahlung",mLangs:"Sprachen",mOpts:"Optionen & Atmosphäre",mPrice:"Preis",mAreas:"Gebiete",mAbout:"Über den Fahrer",mRate:"Fahrer bewerten",mViewProfile:"Profil ansehen",stSport:'Sport',stFast:'Schnell',stComfort:'Komfort',stNormal:'Normal',stAccel:'s 0-100',stSmooth:'Ruhige Fahrt',stBalanced:'Ausgewogen',onlineNow:'Jetzt online',lastSeen:'Zuletzt',agoNow:'gerade eben',agoM:' Min.',agoH:' Std.',agoD:' Tg.',prDay:'Tag',prNight:'Nacht',prStart:'Grundpreis',emilAreas:'Sofia — Zentrum, Flughafen, Ringstraße, alle Stadtteile',petarBio:'Nichtraucher. IT-Spezialist. Ruhige, gleichmäßige Fahrweise. Musik auf Wunsch — Ihre Wahl über YouTube. 540L Kofferraum. Kleine Haustiere willkommen.',
+    mBeforeOrder:"Vor der Bestellung",
+    lblMusic:"🎵 Bevorzugte Musik",lblTip:"💰 Geplantes Trinkgeld (optional)",lblPax:"👥 Passagiere",paxOpt2:"1–2",paxOpt3:"3",paxOpt4:"4",orderPax:"• Passagiere:",lblWhen:"🕒 Wann",btnNow:"Jetzt",btnSchedule:"📅 Terminieren",pickupGps:"Abholung: mein Standort (GPS)",pickupCustom:"Abholung: benutzerdefinierter Punkt",destSet:"Ziel: Punkt gesetzt",destNotSet:"Ziel: nicht festgelegt (optional)",btnChange:"Ändern",btnSet:"Festlegen",locPickerHint:"📌 Tippen Sie auf die Karte, um den Punkt festzulegen, oder fügen Sie unten einen Google-Maps-Link ein",locPickerPlaceholder:"Google-Maps-Link einfügen (optional)",orderPickup:"📍 Abholort:",orderDest:"🏁 Ziel:",scheduleWarn:"⚠️ Dies ist eine Buchungsanfrage, keine bestätigte Fahrt. Bitte warten Sie auf die Bestätigung des Fahrers per Anruf oder Nachricht.",orderWhen:"📅 Gewünschte Zeit:",orderConfirmNote:"⚠️ Bitte bestätigen Sie diese Buchung durch Antwort.",orderNow:"🕒 Jetzt (sofort)",paxWarn:"⚠️ 3-4 Passagiere mit Gepäck — bitte rufen Sie vorher an, um zu bestätigen, dass alles bequem passt.",paxWarnMsg:"⚠️ 3-4 Passagiere mit Gepäck — bitte vor Buchung bestätigen",
+    optNoPref:"Keine Präferenz",optPop:"🎤 Pop",optChalga:"🎶 Chalga",optRock:"🎸 Rock",optClassical:"🎻 Klassik",optJazz:"🎷 Jazz",optElectronic:"🎧 Elektronisch",optNoMusic:"🔇 Keine Musik",optNoTip:"Kein Trinkgeld geplant",optSmallTip:"Ein kleines Trinkgeld",optFairTip:"Ein faires Trinkgeld — danke fürs Kommen",optGenTip:"Ein großzügiges Trinkgeld",
+    sumFast:"Kann schnell fahren",sumCalm:"oder ruhig — Ihre Wahl",sumTalkSilent:"redet gerne oder bleibt still",sumTalk:"genießt Gespräche",sumSilent:"bevorzugt Ruhe",sumMusic:"spielt",
+    pbHurry:"⏱ Ich habe es eilig",pbRelax:"😌 Ruhig angehen",pbSilent:"🤫 Stille bevorzugt",pbTalk:"💬 Gerne ein Gespräch",pbNomusic:"🔇 Keine Musik",pbAc:"❄️ Klima bitte",pbLuggage:"🧳 Habe Gepäck",btnCallM:"📞 Anrufen",btnVibOrd:"💬 Über Viber bestellen",locDefault:"Standort wird mit dem Fahrer geteilt",
+    hT1:"Fahrer finden",hP1:"Verifizierte Fahrer durchsuchen. Filtern Sie nach Zahlung, Fahrzeugtyp, Sprache, Fahrstil, Atmosphäre.",hT2:"Profil prüfen",hP2:"Foto, Auto, Preise, Sprachen und Fahrstil ansehen. Wissen Sie genau, wen Sie erwarten.",hT3:"Direkt anrufen oder Viber",hP3:"Kontaktieren Sie Ihren Fahrer direkt. Keine Buchungsgebühr, kein Algorithmus, keine Provision.",hT4:"Sagen Sie Ihrem Fahrer Ihren Stil",hP4:"Sagen Sie Ihrem Fahrer beim Einsteigen, wie Sie fahren möchten. Musik, Stille, Tempo, Route.",hT5:"Fahrer bezahlen",hP5:"Bar, Revolut oder Kartenterminal. 100% gehen an den Fahrer, keine Provision.",hT6:"Bewertungen sind verifiziert",hP6:"Alle Bewertungen werden vor der Veröffentlichung von einem Administrator geprüft. Schützt Fahrer vor unfairen Bewertungen.",hCta:"Jetzt Fahrer finden",
+    rFree:"KOSTENLOS fur die ersten 50 Fahrer pro Stadt",rJoinnow:"Jetzt beitreten, keine Zahlung erforderlich",rSpots:"VERBLEIBENDE PLAETZE",rSpotsleft:"50 / 50 verbleibend",rH1:"Fahren mit TAXITI",rP1:"Die Plattform, auf der Fahrer an erster Stelle stehen. Behalte 100% jeder Fahrt. Fur immer.",rAfter:"20 EUR/Monat nach dem Start",rBeta:"Beta, die ersten 50 Fahrer pro Stadt weltweit",rH2:"Was Sie bekommen",rB1t:"Live-GPS auf der Karte",rB1s:"Kunden sehen Sie in Echtzeit",rB2t:"Fahrerschutz",rB2s:"Bewertungen werden vor Veroeffentlichung gepruft. Schlechte Kunden werden gemeldet.",rB3t:"Verifiziertes Abzeichen",rB3s:"Fahrzeug gegen offizielle Register gepruft",rB4t:"Digitale Dokumente",rB4s:"Befoerderungserlaubnis und Fahrtenbuch inklusive",rB5t:"Null Provision",rB5s:"Jeder Cent der Fahrt gehoert Ihnen. Immer.",rB6t:"Jede Stadt, jedes Land",rB6s:"Sofia, Zurich, Berlin, London, eine Plattform",rH3:"Was wir brauchen",rC1t:"Ihr Foto",rC1s:" - Kunden wissen, wen sie erwarten",rC2t:"Autofotos",rC2s:" - aussen, innen, Armaturenbrett",rC3t:"Telefonnummer",rC3s:" - Kunden rufen an oder schreiben direkt",rC4t:"Stadt und Gebiete",rC4s:" - wo Sie fahren",rGdpr:"DSGVO: Es werden nur oeffentliche Profildaten erfasst. Kein Ausweis, keine Adresse, keine Finanzen. Jederzeit loeschbar. Niemals an Dritte verkauft.",rH4:"So treten Sie bei",rP2:"Fahrerregistrierung uber unsere spezielle Fahrer-App. Unter 5 Minuten.",rSoon:"Fahrer-App, demnaechst verfuegbar",rNotify:"Hinterlassen Sie Ihren Kontakt und wir benachrichtigen Sie",rJoinbtn:"Warteliste beitreten, kostenlos",
+    emilBio:"Nichtraucher. IT-Spezialist. Im Ausland gelebt. Keine Tiere, kein Essen oder Trinken im Auto. Gerne reden oder schweigen. Bitte sprechen Sie, wenn Sie eine bestimmte Route wuenschen oder sich unwohl fuehlen."
+  ,
+    orderHeader:'🚕 TAXITI Taxibestellung',
+    orderPrefs:'Meine Präferenzen:',
+    orderMusic:'• Musik:',
+    orderLocation:'📍 Mein Standort:',
+    orderNoLocation:'📍 Standort nicht geteilt — bitte nach Adresse fragen',
+    prefHurry:'Ich habe es eilig',
+    prefRelax:'Bitte fahren Sie ruhig',
+    prefSilent:'Ich bevorzuge Stille',
+    prefTalk:'Gerne plaudern',
+    prefMusic:'Musik bitte',
+    prefNomusic:'Keine Musik',
+    prefAc:'Klimaanlage bitte',
+    prefLuggage:'Ich habe Gepäck',
+    musicPop:'Pop',
+    musicChalga:'Chalga',
+    musicRock:'Rock',
+    musicClassical:'Klassik',
+    musicJazz:'Jazz',
+    musicElectronic:'Elektronisch',
+    musicChillout:'Chillout',
+    musicLounge:'Lounge',
+    musicNone:'Keine Musik',
+    tipSmall:'Kleines Trinkgeld',
+    tipFair:'Danke für die weite Fahrt',
+    tipGenerous:'Großzügiges Trinkgeld'},
+  fr:{
+    logo:'🐟 TAXITI',
+    tagline:'Trouvez votre chauffeur directement',
+    tabMap:'🗺 Carte',tabList:'Chauffeurs',tabHow:'ℹ Comment',tabReg:'🚕 Rejoindre',
+    search:'Chercher chauffeur, voiture...',
+    sStatus:'Statut',sPayment:'Paiement',sStyle:'Style de conduite',sCar:'Type de voiture',
+    sAtm:'Atmosphère',sComfort:'Confort',sLang:'Langue',sExtras:'Extras',
+    fAll:'Tous',fOnline:'🟢 En ligne',fOffline:'⚫ Hors ligne',
+    fRevolut:'💜 Revolut',fCash:'💵 Espèces',fTerminal:'💳 Terminal',
+    fSport:'🏎 Sport 0-5s',fFast:'⚡ Rapide 5-7s',fNormal:'🚗 Normal',fComfort:'🛋 Confort',
+    fElectric:'⚡ Électrique',fSedan:'🚗 Berline',fSuv:'🚙 SUV',fMinivan:'🚐 Monospace 7+',fLuxury:'👑 Luxe',
+    fSilent:'🤫 Silencieux',fTalk:'💬 Bavard',fMusic:'🎵 Musique OK',fChalga:'🎶 Chalga OK',fNomusic:'🔇 Sans musique',
+    fNosmoker:'🚭 Non-fumeur',fSmoking:'🚬 Fumeur OK',fPet:'🐾 Animaux',fChild:'👶 Siège enfant',fAc:'❄️ Clim',fWheel:'♿ Fauteuil',fLegroom:'🦵 Grand espace jambes',fPanoroof:'🌤 Toit panoramique',fStreaming:'🎧 Tidal/Spotify',fUsb:'🔌 Chargeur USB',fTinted:'🕶 Vitres teintées',
+    fAirport:'✈️ Aéroport',fLong:'🛣️ Longue distance',fNight:'🌙 Nuit',fBiz:'💼 Business',fVerified:'✅ Vérifié',fTop:'⭐ Top',fNew:'🆕 Nouveau',
+    btnCall:'📞 Appeler',btnVib:'💬 Viber',
+    noDrivers:'Aucun chauffeur trouvé',
+    online:'En ligne',offline:'Hors ligne',
+    mVerified:"✓ Vérifié",mReviews:"avis",mWarn:"Dites à votre chauffeur votre rythme préféré en montant",mCalmOpt:"Conduite calme sur demande",mCarDet:"Détails du véhicule",mPhotos:"Photos de la voiture",onRequest:"sur demande",extraFee:"supplément",mType:"Type",mSeats:"Places",mPassengers:"passagers",mAccel:"0-100 km/h",mElectric:"Électrique",mAC:"Clim",mYes:"Oui",mPayment:"Paiement",mLangs:"Langues",mOpts:"Options et ambiance",mPrice:"Prix",mAreas:"Zones",mAbout:"À propos du chauffeur",mRate:"Évaluer ce chauffeur",mViewProfile:"Voir le profil",stSport:'Sport',stFast:'Rapide',stComfort:'Confort',stNormal:'Normal',stAccel:'s 0-100',stSmooth:'Conduite souple',stBalanced:'Équilibré',onlineNow:'En ligne',lastSeen:'Vu il y a',agoNow:"à l'instant",agoM:' min',agoH:' h',agoD:' j',prDay:'jour',prNight:'nuit',prStart:'prise en charge',emilAreas:'Sofia — Centre, Aéroport, Périphérique, tous les quartiers',petarBio:'Non-fumeur. Spécialiste IT. Conduite calme et souple. Musique à la demande — votre choix via YouTube. Coffre de 540L. Petits animaux acceptés.',
+    mBeforeOrder:"Avant de commander",
+    lblMusic:"🎵 Musique préférée",lblTip:"💰 Pourboire prévu (optionnel)",lblPax:"👥 Passagers",paxOpt2:"1–2",paxOpt3:"3",paxOpt4:"4",orderPax:"• Passagers :",lblWhen:"🕒 Quand",btnNow:"Maintenant",btnSchedule:"📅 Planifier",pickupGps:"Prise en charge : ma position (GPS)",pickupCustom:"Prise en charge : point personnalisé",destSet:"Destination : point défini",destNotSet:"Destination : non définie (optionnel)",btnChange:"Changer",btnSet:"Définir",locPickerHint:"📌 Touchez la carte pour définir le point, ou collez un lien Google Maps ci-dessous",locPickerPlaceholder:"Coller un lien Google Maps (optionnel)",orderPickup:"📍 Lieu de prise en charge :",orderDest:"🏁 Destination :",scheduleWarn:"⚠️ Ceci est une demande de réservation, pas une course confirmée. Attendez la confirmation du chauffeur par appel ou message.",orderWhen:"📅 Heure demandée :",orderConfirmNote:"⚠️ Merci de confirmer cette réservation en répondant.",orderNow:"🕒 Maintenant (dès que possible)",paxWarn:"⚠️ 3-4 passagers avec bagages — merci d appeler d abord pour confirmer que tout rentre confortablement.",paxWarnMsg:"⚠️ 3-4 passagers avec bagages — merci de confirmer avant de réserver",
+    optNoPref:"Aucune préférence",optPop:"🎤 Pop",optChalga:"🎶 Chalga",optRock:"🎸 Rock",optClassical:"🎻 Classique",optJazz:"🎷 Jazz",optElectronic:"🎧 Électronique",optNoMusic:"🔇 Sans musique",optNoTip:"Pas de pourboire prévu",optSmallTip:"Un petit pourboire",optFairTip:"Un pourboire juste — merci de venir de loin",optGenTip:"Un généreux pourboire",
+    sumFast:"Peut conduire vite",sumCalm:"ou calmement — votre choix",sumTalkSilent:"aime parler ou rester silencieux",sumTalk:"aime discuter",sumSilent:"préfère le calme",sumMusic:"joue",
+    pbHurry:"⏱ Je suis pressé",pbRelax:"😌 Tranquillement",pbSilent:"🤫 Préfère le silence",pbTalk:"💬 Content de discuter",pbNomusic:"🔇 Sans musique",pbAc:"❄️ Clim svp",pbLuggage:"🧳 Avec bagages",btnCallM:"📞 Appeler",btnVibOrd:"💬 Commander via Viber",locDefault:"La localisation sera partagée avec le chauffeur",
+    hT1:"Trouver un chauffeur",hP1:"Parcourez les chauffeurs vérifiés. Filtrez par paiement, type de voiture, langue, style de conduite, ambiance.",hT2:"Vérifier le profil",hP2:"Voyez photo, voiture, prix, langues et style de conduite. Sachez exactement qui attendre.",hT3:"Appeler ou Viber directement",hP3:"Contactez votre chauffeur directement. Pas de frais de réservation, pas d'algorithme, pas de commission.",hT4:"Dites votre style au chauffeur",hP4:"Dites a votre chauffeur comment vous preferez voyager en montant. Musique, silence, vitesse, itineraire.",hT5:"Payer le chauffeur",hP5:"Especes, Revolut ou terminal de carte. 100% va au chauffeur, zero commission.",hT6:"Les avis sont verifies",hP6:"Tous les avis sont verifies par un administrateur avant publication. Protege les chauffeurs des avis injustes.",hCta:"Trouver un chauffeur maintenant",
+    rFree:"GRATUIT pour les 50 premiers chauffeurs par ville",rJoinnow:"Rejoignez maintenant, aucun paiement requis",rSpots:"PLACES RESTANTES",rSpotsleft:"50 / 50 restantes",rH1:"Conduisez avec TAXITI",rP1:"La plateforme ou les chauffeurs passent en premier. Gardez 100% de chaque course. Pour toujours.",rAfter:"20 EUR/mois apres le lancement",rBeta:"Beta, les 50 premiers chauffeurs par ville",rH2:"Ce que vous obtenez",rB1t:"GPS en direct sur la carte",rB1s:"Les clients vous voient en temps reel",rB2t:"Protection du chauffeur",rB2s:"Les avis sont verifies avant publication. Les mauvais clients sont signales.",rB3t:"Badge verifie",rB3s:"Vehicule verifie aupres des registres officiels",rB4t:"Documents numeriques",rB4s:"Permis transporteur et carnet de bord inclus",rB5t:"Zero commission",rB5s:"Chaque centime de la course est a vous. Toujours.",rB6t:"Toute ville, tout pays",rB6s:"Sofia, Zurich, Berlin, Londres, une plateforme",rH3:"Ce dont nous avons besoin",rC1t:"Votre photo",rC1s:" - les clients savent qui attendre",rC2t:"Photos de la voiture",rC2s:" - exterieur, interieur, tableau de bord",rC3t:"Numero de telephone",rC3s:" - les clients appellent ou ecrivent directement",rC4t:"Ville et zones",rC4s:" - ou vous conduisez",rGdpr:"RGPD: Seules les donnees du profil public sont collectees. Pas de piece d'identite, pas d'adresse, pas de finances. Suppression a tout moment. Jamais vendu a des tiers.",rH4:"Comment rejoindre",rP2:"Inscription des chauffeurs via notre application dediee. Moins de 5 minutes.",rSoon:"Application chauffeur, bientot disponible",rNotify:"Laissez votre contact et nous vous informerons",rJoinbtn:"Rejoindre la liste d'attente, gratuit",
+    emilBio:"Non-fumeur. Specialiste informatique. A vecu a l'etranger. Pas d'animaux, de nourriture ou de boissons dans la voiture. Heureux de parler ou de rester silencieux. Merci de parler si vous voulez un itineraire specifique ou si vous ne vous sentez pas bien."
+  ,
+    orderHeader:'🚕 TAXITI demande de taxi',
+    orderPrefs:'Mes préférences:',
+    orderMusic:'• Musique:',
+    orderLocation:'📍 Ma position:',
+    orderNoLocation:'📍 Position non partagée — veuillez demander l\'adresse',
+    prefHurry:'Je suis pressé',
+    prefRelax:'Conduisez calmement SVP',
+    prefSilent:'Je préfère le silence',
+    prefTalk:'Prêt à discuter',
+    prefMusic:'Musique SVP',
+    prefNomusic:'Pas de musique',
+    prefAc:'Climatisation SVP',
+    prefLuggage:'J\'ai des bagages',
+    musicPop:'Pop',
+    musicChalga:'Chalga',
+    musicRock:'Rock',
+    musicClassical:'Classique',
+    musicJazz:'Jazz',
+    musicElectronic:'Électronique',
+    musicChillout:'Chillout',
+    musicLounge:'Lounge',
+    musicNone:'Pas de musique',
+    tipSmall:'Petit pourboire',
+    tipFair:'Merci d\'être venu de loin',
+    tipGenerous:'Pourboire généreux'},
+  ru:{
+    logo:'🐟 TAXITI',
+    tagline:'Найди водителя напрямую',
+    tabMap:'🗺 Карта',tabList:'Водители',tabHow:'ℹ Как',tabReg:'🚕 Вступить',
+    search:'Поиск водителя, авто, района...',
+    sStatus:'Статус',sPayment:'Оплата',sStyle:'Стиль вождения',sCar:'Тип авто',
+    sAtm:'Атмосфера',sComfort:'Комфорт',sLang:'Язык',sExtras:'Дополнительно',
+    fAll:'Все',fOnline:'🟢 Онлайн',fOffline:'⚫ Офлайн',
+    fRevolut:'💜 Revolut',fCash:'💵 Наличные',fTerminal:'💳 Терминал',
+    fSport:'🏎 Спорт 0-5s',fFast:'⚡ Быстро 5-7s',fNormal:'🚗 Нормально',fComfort:'🛋 Комфорт',
+    fElectric:'⚡ Электро',fSedan:'🚗 Седан',fSuv:'🚙 SUV',fMinivan:'🚐 Минивэн 7+',fLuxury:'👑 Люкс',
+    fSilent:'🤫 Тишина',fTalk:'💬 Общение',fMusic:'🎵 Музыка OK',fChalga:'🎶 Чалга OK',fNomusic:'🔇 Без музыки',
+    fNosmoker:'🚭 Некурящий',fSmoking:'🚬 Курение OK',fPet:'🐾 Животные',fChild:'👶 Детское кресло',fAc:'❄️ Кондиционер',fWheel:'♿ Коляска',fLegroom:'🦵 Много места для ног',fPanoroof:'🌤 Панорамная крыша',fStreaming:'🎧 Tidal/Spotify',fUsb:'🔌 USB-зарядка',fTinted:'🕶 Тонированные стёкла',
+    fAirport:'✈️ Аэропорт',fLong:'🛣️ Дальние',fNight:'🌙 Ночные',fBiz:'💼 Бизнес',fVerified:'✅ Верифицирован',fTop:'⭐ Топ',fNew:'🆕 Новый',
+    btnCall:'📞 Звонить',btnVib:'💬 Viber',
+    noDrivers:'Водители не найдены',
+    online:'Онлайн',offline:'Офлайн',
+    mVerified:"✓ Подтвержден",mReviews:"отзывов",mWarn:"Скажите водителю предпочитаемый темп при посадке",mCalmOpt:"Спокойная езда по запросу",mCarDet:"Детали автомобиля",mPhotos:"Фото автомобиля",onRequest:"по договорённости",extraFee:"доплата",mType:"Тип",mSeats:"Места",mPassengers:"пассажиров",mAccel:"0-100 км/ч",mElectric:"Электро",mAC:"Кондиционер",mYes:"Да",mPayment:"Оплата",mLangs:"Языки",mOpts:"Опции и атмосфера",mPrice:"Цена",mAreas:"Районы",mAbout:"О водителе",mRate:"Оценить водителя",mViewProfile:"Смотреть профиль",stSport:'Спорт',stFast:'Быстрый',stComfort:'Комфорт',stNormal:'Обычный',stAccel:'с 0-100',stSmooth:'Плавная езда',stBalanced:'Сбалансированный',onlineNow:'Онлайн',lastSeen:'Был(а)',agoNow:'только что',agoM:' мин назад',agoH:' ч назад',agoD:' дн назад',prDay:'день',prNight:'ночь',prStart:'посадка',emilAreas:'София — Центр, Аэропорт, Кольцевая, все районы',petarBio:'Не курю. IT-специалист. Спокойное, плавное вождение. Музыка по запросу — ваш выбор через YouTube. Багажник 540 л. Небольшие питомцы — добро пожаловать.',
+    mBeforeOrder:"Перед заказом",
+    lblMusic:"🎵 Предпочитаемая музыка",lblTip:"💰 Планируемые чаевые (необязательно)",lblPax:"👥 Пассажиры",paxOpt2:"1–2",paxOpt3:"3",paxOpt4:"4",orderPax:"• Пассажиры:",lblWhen:"🕒 Когда",btnNow:"Сейчас",btnSchedule:"📅 Забронировать",pickupGps:"Подача: моё местоположение (GPS)",pickupCustom:"Подача: указанная точка",destSet:"Пункт назначения: указан",destNotSet:"Пункт назначения: не указан (по желанию)",btnChange:"Изменить",btnSet:"Указать",locPickerHint:"📌 Нажмите на карту, чтобы указать точку, или вставьте ссылку Google Maps ниже",locPickerPlaceholder:"Вставьте ссылку Google Maps (по желанию)",orderPickup:"📍 Место подачи:",orderDest:"🏁 Пункт назначения:",scheduleWarn:"⚠️ Это запрос на бронирование, а не подтверждённая поездка. Дождитесь подтверждения от водителя по звонку или сообщению.",orderWhen:"📅 Запрошенное время:",orderConfirmNote:"⚠️ Пожалуйста, подтвердите это бронирование ответом.",orderNow:"🕒 Сейчас (немедленно)",paxWarn:"⚠️ 3-4 пассажира с багажом — пожалуйста, позвоните заранее, чтобы подтвердить, что всё поместится.",paxWarnMsg:"⚠️ 3-4 пассажира с багажом — подтвердите перед заказом",
+    optNoPref:"Без предпочтений",optPop:"🎤 Поп",optChalga:"🎶 Чалга",optRock:"🎸 Рок",optClassical:"🎻 Классика",optJazz:"🎷 Джаз",optElectronic:"🎧 Электронная",optNoMusic:"🔇 Без музыки",optNoTip:"Без чаевых",optSmallTip:"Небольшие чаевые",optFairTip:"Достойные чаевые — спасибо за долгий путь",optGenTip:"Щедрые чаевые",
+    sumFast:"Может ехать быстро",sumCalm:"или спокойно — ваш выбор",sumTalkSilent:"любит поговорить или помолчать",sumTalk:"любит общение",sumSilent:"предпочитает тишину",sumMusic:"играет",
+    pbHurry:"⏱ Я тороплюсь",pbRelax:"😌 Спокойно",pbSilent:"🤫 Предпочитаю тишину",pbTalk:"💬 Рад пообщаться",pbNomusic:"🔇 Без музыки",pbAc:"❄️ Кондиционер",pbLuggage:"🧳 Есть багаж",btnCallM:"📞 Позвонить",btnVibOrd:"💬 Заказать через Viber",locDefault:"Местоположение будет передано водителю",
+    hT1:"Найти водителя",hP1:"Просмотрите проверенных водителей. Фильтруйте по оплате, типу авто, языку, стилю вождения, атмосфере.",hT2:"Проверить профиль",hP2:"Посмотрите фото, машину, цены, языки и стиль вождения. Точно знайте, кого ожидать.",hT3:"Позвонить или написать в Viber",hP3:"Свяжитесь с водителем напрямую. Без платы за бронирование, без алгоритма, без комиссии.",hT4:"Скажите водителю свой стиль",hP4:"Скажите водителю, как вы предпочитаете ехать, при посадке. Музыка, тишина, скорость, маршрут.",hT5:"Оплатить водителю",hP5:"Наличные, Revolut или терминал. 100% идет водителю, нулевая комиссия.",hT6:"Оценки проверены",hP6:"Все отзывы проверяются администратором перед публикацией. Защищает водителей от несправедливых оценок.",hCta:"Найти водителя сейчас",
+    rFree:"БЕСПЛАТНО для первых 50 водителей в каждом городе",rJoinnow:"Присоединяйтесь сейчас, без оплаты",rSpots:"ОСТАЛОСЬ МЕСТ",rSpotsleft:"50 / 50 осталось",rH1:"Работайте с TAXITI",rP1:"Платформа, где водители на первом месте. Оставляйте 100% от каждой поездки. Навсегда.",rAfter:"20 EUR/мес после запуска",rBeta:"Бета, первые 50 водителей в каждом городе по всему миру",rH2:"Что вы получаете",rB1t:"GPS на карте в реальном времени",rB1s:"Клиенты видят вас в реальном времени",rB2t:"Защита водителя",rB2s:"Отзывы проверяются перед публикацией. О плохих клиентах сообщается.",rB3t:"Значок верификации",rB3s:"Автомобиль проверен по официальным реестрам",rB4t:"Цифровые документы",rB4s:"Разрешение перевозчика и путевой журнал включены",rB5t:"Нулевая комиссия",rB5s:"Каждая копейка от поездки ваша. Всегда.",rB6t:"Любой город, любая страна",rB6s:"София, Цюрих, Берлин, Лондон, одна платформа",rH3:"Что нам нужно",rC1t:"Ваше фото",rC1s:" - клиенты знают, кого ожидать",rC2t:"Фото автомобиля",rC2s:" - снаружи, внутри, приборная панель",rC3t:"Номер телефона",rC3s:" - клиенты звонят или пишут напрямую",rC4t:"Город и районы",rC4s:" - где вы работаете",rGdpr:"GDPR: Собираются только данные публичного профиля. Без паспорта, без адреса, без финансов. Удаление в любое время. Никогда не продается третьим лицам.",rH4:"Как присоединиться",rP2:"Регистрация водителя через наше специальное приложение. Менее 5 минут.",rSoon:"Приложение для водителей, скоро",rNotify:"Оставьте контакт, и мы вас уведомим",rJoinbtn:"Записаться в лист ожидания, бесплатно",
+    emilBio:"Некурящий. IT-специалист. Жил за границей. Без животных, еды или напитков в машине. Рад поговорить или помолчать. Пожалуйста, скажите, если хотите конкретный маршрут или плохо себя чувствуете."
+  ,
+    orderHeader:'🚕 TAXITI заказ такси',
+    orderPrefs:'Мои предпочтения:',
+    orderMusic:'• Музыка:',
+    orderLocation:'📍 Моё местоположение:',
+    orderNoLocation:'📍 Местоположение не передано — спросите адрес',
+    prefHurry:'Я спешу',
+    prefRelax:'Пожалуйста, едьте спокойно',
+    prefSilent:'Предпочитаю тишину',
+    prefTalk:'Готов поговорить',
+    prefMusic:'Музыку, пожалуйста',
+    prefNomusic:'Без музыки',
+    prefAc:'Кондиционер, пожалуйста',
+    prefLuggage:'У меня багаж',
+    musicPop:'Поп',
+    musicChalga:'Чалга',
+    musicRock:'Рок',
+    musicClassical:'Классика',
+    musicJazz:'Джаз',
+    musicElectronic:'Электронная',
+    musicChillout:'Чиллаут',
+    musicLounge:'Лаунж',
+    musicNone:'Без музыки',
+    tipSmall:'Небольшие чаевые',
+    tipFair:'Спасибо, что приехали',
+    tipGenerous:'Щедрые чаевые'},
+  it:{
+    logo:'🐟 TAXITI',
+    tagline:'Trova il tuo autista direttamente',
+    tabMap:'🗺 Mappa',tabList:'Autisti',tabHow:'ℹ Come',tabReg:'🚕 Unisciti',
+    search:'Cerca autista, auto, zona...',
+    sStatus:'Stato',sPayment:'Pagamento',sStyle:'Stile di guida',sCar:'Tipo auto',
+    sAtm:'Atmosfera',sComfort:'Comfort',sLang:'Lingua',sExtras:'Extra',
+    fAll:'Tutti',fOnline:'🟢 Online',fOffline:'⚫ Offline',
+    fRevolut:'💜 Revolut',fCash:'💵 Contanti',fTerminal:'💳 Terminale',
+    fSport:'🏎 Sport 0-5s',fFast:'⚡ Veloce 5-7s',fNormal:'🚗 Normale',fComfort:'🛋 Comfort',
+    fElectric:'⚡ Elettrico',fSedan:'🚗 Berlina',fSuv:'🚙 SUV',fMinivan:'🚐 Monovolume 7+',fLuxury:'👑 Lusso',
+    fSilent:'🤫 Silenzioso',fTalk:'💬 Chiacchierone',fMusic:'🎵 Musica OK',fChalga:'🎶 Chalga OK',fNomusic:'🔇 Senza musica',
+    fNosmoker:'🚭 Non fumatore',fSmoking:'🚬 Fumo OK',fPet:'🐾 Animali',fChild:'👶 Seggiolino',fAc:'❄️ Aria cond.',fWheel:'♿ Sedia a rotelle',fLegroom:'🦵 Spazio per le gambe',fPanoroof:'🌤 Tetto panoramico',fStreaming:'🎧 Tidal/Spotify',fUsb:'🔌 Caricatore USB',fTinted:'🕶 Vetri oscurati',
+    fAirport:'✈️ Aeroporto',fLong:'🛣️ Lunga distanza',fNight:'🌙 Notturno',fBiz:'💼 Business',fVerified:'✅ Verificato',fTop:'⭐ Top',fNew:'🆕 Nuovo',
+    btnCall:'📞 Chiama',btnVib:'💬 Viber',
+    noDrivers:'Nessun autista trovato',
+    online:'Online',offline:'Offline',
+    mVerified:"✓ Verificato",mReviews:"recensioni",mWarn:"Di al tuo autista il ritmo preferito quando sali",mCalmOpt:"Guida calma su richiesta",mCarDet:"Dettagli auto",mPhotos:"Foto dell auto",onRequest:"su richiesta",extraFee:"supplemento",mType:"Tipo",mSeats:"Posti",mPassengers:"passeggeri",mAccel:"0-100 km/h",mElectric:"Elettrico",mAC:"Aria cond.",mYes:"Si",mPayment:"Pagamento",mLangs:"Lingue",mOpts:"Opzioni e atmosfera",mPrice:"Prezzo",mAreas:"Zone",mAbout:"Sull autista",mRate:"Valuta autista",mViewProfile:"Vedi profilo",stSport:'Sport',stFast:'Veloce',stComfort:'Comfort',stNormal:'Normale',stAccel:'s 0-100',stSmooth:'Guida fluida',stBalanced:'Equilibrato',onlineNow:'Online ora',lastSeen:'Visto',agoNow:'adesso',agoM:' min fa',agoH:' h fa',agoD:' g fa',prDay:'giorno',prNight:'notte',prStart:'partenza',emilAreas:'Sofia — Centro, Aeroporto, Tangenziale, tutti i quartieri',petarBio:'Non fumatore. Specialista IT. Guida calma e fluida. Musica su richiesta — la tua scelta via YouTube. Bagagliaio da 540L. Piccoli animali benvenuti.',
+    mBeforeOrder:"Prima di ordinare",
+    lblMusic:"🎵 Musica preferita",lblTip:"💰 Mancia pianificata (opzionale)",lblPax:"👥 Passeggeri",paxOpt2:"1–2",paxOpt3:"3",paxOpt4:"4",orderPax:"• Passeggeri:",lblWhen:"🕒 Quando",btnNow:"Ora",btnSchedule:"📅 Prenota",pickupGps:"Ritiro: la mia posizione (GPS)",pickupCustom:"Ritiro: punto personalizzato",destSet:"Destinazione: punto impostato",destNotSet:"Destinazione: non impostata (opzionale)",btnChange:"Cambia",btnSet:"Imposta",locPickerHint:"📌 Tocca la mappa per impostare il punto, oppure incolla un link Google Maps qui sotto",locPickerPlaceholder:"Incolla link Google Maps (opzionale)",orderPickup:"📍 Luogo di ritiro:",orderDest:"🏁 Destinazione:",scheduleWarn:"⚠️ Questa è una richiesta di prenotazione, non una corsa confermata. Attendi la conferma dell autista per chiamata o messaggio.",orderWhen:"📅 Orario richiesto:",orderConfirmNote:"⚠️ Conferma questa prenotazione rispondendo.",orderNow:"🕒 Ora (subito)",paxWarn:"⚠️ 3-4 passeggeri con bagagli — chiamare prima per confermare che tutto entri comodamente.",paxWarnMsg:"⚠️ 3-4 passeggeri con bagagli — confermare prima di prenotare",
+    optNoPref:"Nessuna preferenza",optPop:"🎤 Pop",optChalga:"🎶 Chalga",optRock:"🎸 Rock",optClassical:"🎻 Classica",optJazz:"🎷 Jazz",optElectronic:"🎧 Elettronica",optNoMusic:"🔇 Senza musica",optNoTip:"Nessuna mancia prevista",optSmallTip:"Una piccola mancia",optFairTip:"Una mancia equa — grazie per essere venuto da lontano",optGenTip:"Una generosa mancia",
+    sumFast:"Puo guidare veloce",sumCalm:"o con calma — la tua scelta",sumTalkSilent:"felice di parlare o stare in silenzio",sumTalk:"ama conversare",sumSilent:"preferisce silenzio",sumMusic:"suona",
+    pbHurry:"⏱ Ho fretta",pbRelax:"😌 Con calma",pbSilent:"🤫 Preferisco il silenzio",pbTalk:"💬 Felice di chiacchierare",pbNomusic:"🔇 Senza musica",pbAc:"❄️ Aria cond. prego",pbLuggage:"🧳 Ho bagagli",btnCallM:"📞 Chiama",btnVibOrd:"💬 Ordina via Viber",locDefault:"La posizione sara condivisa con l'autista",
+    hT1:"Trova un autista",hP1:"Sfoglia autisti verificati. Filtra per pagamento, tipo di auto, lingua, stile di guida, atmosfera.",hT2:"Controlla il profilo",hP2:"Vedi foto, auto, prezzi, lingue e stile di guida. Sai esattamente chi aspettarti.",hT3:"Chiama o scrivi su Viber",hP3:"Contatta direttamente il tuo autista. Nessuna commissione di prenotazione, nessun algoritmo, nessuna commissione.",hT4:"Di il tuo stile al tuo autista",hP4:"Di al tuo autista come preferisci viaggiare quando sali. Musica, silenzio, velocita, percorso.",hT5:"Paga l'autista",hP5:"Contanti, Revolut o terminale carta. Il 100% va all'autista, zero commissioni.",hT6:"Le valutazioni sono verificate",hP6:"Tutte le recensioni sono controllate da un amministratore prima della pubblicazione. Protegge gli autisti da valutazioni ingiuste.",hCta:"Trova un autista ora",
+    rFree:"GRATIS per i primi 50 autisti per città",rJoinnow:"Iscriviti ora, nessun pagamento richiesto",rSpots:"POSTI RIMANENTI",rSpotsleft:"50 / 50 rimasti",rH1:"Guida con TAXITI",rP1:"La piattaforma dove gli autisti vengono prima. Tieni il 100% di ogni corsa. Per sempre.",rAfter:"20 EUR/mese dopo il lancio",rBeta:"Beta, i primi 50 autisti per città",rH2:"Cosa ottieni",rB1t:"GPS live sulla mappa",rB1s:"I clienti ti vedono in tempo reale",rB2t:"Protezione autista",rB2s:"Le valutazioni sono verificate prima della pubblicazione. I clienti scorretti vengono segnalati.",rB3t:"Badge verificato",rB3s:"Veicolo controllato secondo i registri ufficiali",rB4t:"Documenti digitali",rB4s:"Permesso di trasporto e libretto inclusi",rB5t:"Zero commissioni",rB5s:"Ogni centesimo della corsa e tuo. Sempre.",rB6t:"Qualsiasi citta, qualsiasi paese",rB6s:"Sofia, Zurigo, Berlino, Londra, una piattaforma",rH3:"Di cosa abbiamo bisogno",rC1t:"La tua foto",rC1s:" - i clienti sanno chi aspettarsi",rC2t:"Foto dell'auto",rC2s:" - esterno, interno, cruscotto",rC3t:"Numero di telefono",rC3s:" - i clienti chiamano o scrivono direttamente",rC4t:"Citta e zone",rC4s:" - dove guidi",rGdpr:"GDPR: Vengono raccolti solo i dati del profilo pubblico. Nessun documento, nessun indirizzo, nessuna finanza. Cancellazione in qualsiasi momento. Mai venduto a terzi.",rH4:"Come iscriversi",rP2:"Registrazione autista tramite la nostra app dedicata. Meno di 5 minuti.",rSoon:"App autista, presto disponibile",rNotify:"Lascia il tuo contatto e ti avviseremo",rJoinbtn:"Iscriviti alla lista d'attesa, gratis",
+    emilBio:"Non fumatore. Specialista IT. Vissuto all'estero. Niente animali, cibo o bevande in auto. Felice di parlare o stare in silenzio. Si prega di parlare se si desidera un percorso specifico o ci si sente male."
+  ,
+    orderHeader:'🚕 TAXITI richiesta taxi',
+    orderPrefs:'Le mie preferenze:',
+    orderMusic:'• Musica:',
+    orderLocation:'📍 La mia posizione:',
+    orderNoLocation:'📍 Posizione non condivisa — chiedere l\'indirizzo',
+    prefHurry:'Ho fretta',
+    prefRelax:'Guidi con calma per favore',
+    prefSilent:'Preferisco il silenzio',
+    prefTalk:'Felice di chiacchierare',
+    prefMusic:'Musica per favore',
+    prefNomusic:'Nessuna musica',
+    prefAc:'Aria condizionata per favore',
+    prefLuggage:'Ho dei bagagli',
+    musicPop:'Pop',
+    musicChalga:'Chalga',
+    musicRock:'Rock',
+    musicClassical:'Classica',
+    musicJazz:'Jazz',
+    musicElectronic:'Elettronica',
+    musicChillout:'Chillout',
+    musicLounge:'Lounge',
+    musicNone:'Nessuna musica',
+    tipSmall:'Piccola mancia',
+    tipFair:'Grazie per essere venuto da lontano',
+    tipGenerous:'Mancia generosa'},
+  es:{
+    logo:'🐟 TAXITI',
+    tagline:'Encuentra tu conductor directamente',
+    tabMap:'🗺 Mapa',tabList:'Conductores',tabHow:'ℹ Cómo',tabReg:'🚕 Unirse',
+    search:'Buscar conductor, coche, zona...',
+    sStatus:'Estado',sPayment:'Pago',sStyle:'Estilo de conducción',sCar:'Tipo de coche',
+    sAtm:'Atmósfera',sComfort:'Confort',sLang:'Idioma',sExtras:'Extras',
+    fAll:'Todos',fOnline:'🟢 Online',fOffline:'⚫ Offline',
+    fRevolut:'💜 Revolut',fCash:'💵 Efectivo',fTerminal:'💳 Terminal',
+    fSport:'🏎 Sport 0-5s',fFast:'⚡ Rápido 5-7s',fNormal:'🚗 Normal',fComfort:'🛋 Confort',
+    fElectric:'⚡ Eléctrico',fSedan:'🚗 Sedán',fSuv:'🚙 SUV',fMinivan:'🚐 Monovolumen 7+',fLuxury:'👑 Lujo',
+    fSilent:'🤫 Silencioso',fTalk:'💬 Conversador',fMusic:'🎵 Música OK',fChalga:'🎶 Chalga OK',fNomusic:'🔇 Sin música',
+    fNosmoker:'🚭 No fumador',fSmoking:'🚬 Fumar OK',fPet:'🐾 Mascotas',fChild:'👶 Silla niño',fAc:'❄️ Aire acond.',fWheel:'♿ Silla de ruedas',fLegroom:'🦵 Amplio espacio para piernas',fPanoroof:'🌤 Techo panorámico',fStreaming:'🎧 Tidal/Spotify',fUsb:'🔌 Cargador USB',fTinted:'🕶 Cristales tintados',
+    fAirport:'✈️ Aeropuerto',fLong:'🛣️ Larga distancia',fNight:'🌙 Nocturno',fBiz:'💼 Negocios',fVerified:'✅ Verificado',fTop:'⭐ Top',fNew:'🆕 Nuevo',
+    btnCall:'📞 Llamar',btnVib:'💬 Viber',
+    noDrivers:'No se encontraron conductores',
+    online:'Online',offline:'Offline',
+    mVerified:"✓ Verificado",mReviews:"reseñas",mWarn:"Dile a tu conductor tu ritmo preferido al subir",mCalmOpt:"Conducción tranquila bajo petición",mCarDet:"Detalles del coche",mPhotos:"Fotos del coche",onRequest:"a petición",extraFee:"cargo extra",mType:"Tipo",mSeats:"Asientos",mPassengers:"pasajeros",mAccel:"0-100 km/h",mElectric:"Eléctrico",mAC:"A/C",mYes:"Sí",mPayment:"Pago",mLangs:"Idiomas",mOpts:"Opciones y ambiente",mPrice:"Precio",mAreas:"Zonas",mAbout:"Sobre el conductor",mRate:"Calificar conductor",mViewProfile:"Ver perfil",stSport:'Sport',stFast:'Rápido',stComfort:'Confort',stNormal:'Normal',stAccel:'s 0-100',stSmooth:'Conducción suave',stBalanced:'Equilibrado',onlineNow:'En línea',lastSeen:'Visto hace',agoNow:'ahora mismo',agoM:' min',agoH:' h',agoD:' d',prDay:'día',prNight:'noche',prStart:'bajada de bandera',emilAreas:'Sofía — Centro, Aeropuerto, Circunvalación, todos los barrios',petarBio:'No fumador. Especialista en IT. Conducción tranquila y suave. Música a petición — tu elección vía YouTube. Maletero de 540L. Se aceptan mascotas pequeñas.',
+    mBeforeOrder:"Antes de pedir",
+    lblMusic:"🎵 Música preferida",lblTip:"💰 Propina planeada (opcional)",lblPax:"👥 Pasajeros",paxOpt2:"1–2",paxOpt3:"3",paxOpt4:"4",orderPax:"• Pasajeros:",lblWhen:"🕒 Cuándo",btnNow:"Ahora",btnSchedule:"📅 Programar",pickupGps:"Recogida: mi ubicación (GPS)",pickupCustom:"Recogida: punto personalizado",destSet:"Destino: punto establecido",destNotSet:"Destino: no establecido (opcional)",btnChange:"Cambiar",btnSet:"Establecer",locPickerHint:"📌 Toca el mapa para fijar el punto, o pega un enlace de Google Maps abajo",locPickerPlaceholder:"Pegar enlace de Google Maps (opcional)",orderPickup:"📍 Lugar de recogida:",orderDest:"🏁 Destino:",scheduleWarn:"⚠️ Esta es una solicitud de reserva, no un viaje confirmado. Espere la confirmación del conductor por llamada o mensaje.",orderWhen:"📅 Hora solicitada:",orderConfirmNote:"⚠️ Por favor confirme esta reserva respondiendo.",orderNow:"🕒 Ahora (enseguida)",paxWarn:"⚠️ 3-4 pasajeros con equipaje — llame antes para confirmar que todo cabe cómodamente.",paxWarnMsg:"⚠️ 3-4 pasajeros con equipaje — confirme antes de reservar",
+    optNoPref:"Sin preferencia",optPop:"🎤 Pop",optChalga:"🎶 Chalga",optRock:"🎸 Rock",optClassical:"🎻 Clásica",optJazz:"🎷 Jazz",optElectronic:"🎧 Electrónica",optNoMusic:"🔇 Sin música",optNoTip:"Sin propina planeada",optSmallTip:"Una pequeña propina",optFairTip:"Una propina justa — gracias por venir desde lejos",optGenTip:"Una generosa propina",
+    sumFast:"Puede conducir rapido",sumCalm:"o con calma — tu eleccion",sumTalkSilent:"feliz de hablar o guardar silencio",sumTalk:"disfruta conversar",sumSilent:"prefiere silencio",sumMusic:"reproduce",
+    pbHurry:"⏱ Tengo prisa",pbRelax:"😌 Con calma",pbSilent:"🤫 Prefiero silencio",pbTalk:"💬 Encantado de charlar",pbNomusic:"🔇 Sin música",pbAc:"❄️ A/C por favor",pbLuggage:"🧳 Tengo equipaje",btnCallM:"📞 Llamar",btnVibOrd:"💬 Pedir por Viber",locDefault:"La ubicación se compartirá con el conductor",
+    hT1:"Encuentra un conductor",hP1:"Explora conductores verificados. Filtra por pago, tipo de coche, idioma, estilo de conduccion, ambiente.",hT2:"Revisa el perfil",hP2:"Mira foto, coche, precios, idiomas y estilo de conduccion. Sabe exactamente a quien esperar.",hT3:"Llama o escribe por Viber",hP3:"Contacta a tu conductor directamente. Sin tarifa de reserva, sin algoritmo, sin comision.",hT4:"Dile a tu conductor tu estilo",hP4:"Dile a tu conductor como prefieres viajar al subir. Musica, silencio, velocidad, ruta.",hT5:"Paga al conductor",hP5:"Efectivo, Revolut o terminal de tarjeta. El 100% va al conductor, cero comision.",hT6:"Las calificaciones estan verificadas",hP6:"Todas las resenas son revisadas por un administrador antes de publicarse. Protege a los conductores de calificaciones injustas.",hCta:"Encuentra un conductor ahora",
+    rFree:"GRATIS para los primeros 50 conductores por ciudad",rJoinnow:"Unete ahora, sin pago requerido",rSpots:"PLAZAS RESTANTES",rSpotsleft:"50 / 50 restantes",rH1:"Conduce con TAXITI",rP1:"La plataforma donde los conductores van primero. Quedate con el 100% de cada viaje. Para siempre.",rAfter:"20 EUR/mes despues del lanzamiento",rBeta:"Beta, los primeros 50 conductores por ciudad",rH2:"Lo que obtienes",rB1t:"GPS en vivo en el mapa",rB1s:"Los clientes te ven en tiempo real",rB2t:"Proteccion del conductor",rB2s:"Las calificaciones se revisan antes de publicarse. Los clientes problematicos son reportados.",rB3t:"Insignia verificada",rB3s:"Vehiculo verificado segun registros oficiales",rB4t:"Documentos digitales",rB4s:"Permiso de transportista y libro de ruta incluidos",rB5t:"Cero comision",rB5s:"Cada centavo del viaje es tuyo. Siempre.",rB6t:"Cualquier ciudad, cualquier pais",rB6s:"Sofia, Zurich, Berlin, Londres, una plataforma",rH3:"Lo que necesitamos",rC1t:"Tu foto",rC1s:" - los clientes saben a quien esperar",rC2t:"Fotos del coche",rC2s:" - exterior, interior, tablero",rC3t:"Numero de telefono",rC3s:" - los clientes llaman o escriben directamente",rC4t:"Ciudad y zonas",rC4s:" - donde conduces",rGdpr:"RGPD: Solo se recopilan datos del perfil publico. Sin identificacion, sin direccion, sin finanzas. Eliminacion en cualquier momento. Nunca vendido a terceros.",rH4:"Como unirse",rP2:"Registro de conductor a traves de nuestra app dedicada. Menos de 5 minutos.",rSoon:"App de conductor, proximamente",rNotify:"Deja tu contacto y te notificaremos",rJoinbtn:"Unirse a la lista de espera, gratis",
+    emilBio:"No fumador. Especialista en TI. Vivio en el extranjero. Sin animales, comida o bebidas en el coche. Feliz de hablar o guardar silencio. Por favor avise si quiere una ruta especifica o se siente mal."
+  ,
+    orderHeader:'🚕 TAXITI solicitud de taxi',
+    orderPrefs:'Mis preferencias:',
+    orderMusic:'• Música:',
+    orderLocation:'📍 Mi ubicación:',
+    orderNoLocation:'📍 Ubicación no compartida — pedir la dirección',
+    prefHurry:'Tengo prisa',
+    prefRelax:'Conduzca con calma por favor',
+    prefSilent:'Prefiero silencio',
+    prefTalk:'Feliz de charlar',
+    prefMusic:'Música por favor',
+    prefNomusic:'Sin música',
+    prefAc:'Aire acondicionado por favor',
+    prefLuggage:'Tengo equipaje',
+    musicPop:'Pop',
+    musicChalga:'Chalga',
+    musicRock:'Rock',
+    musicClassical:'Clásica',
+    musicJazz:'Jazz',
+    musicElectronic:'Electrónica',
+    musicChillout:'Chillout',
+    musicLounge:'Lounge',
+    musicNone:'Sin música',
+    tipSmall:'Propina pequeña',
+    tipFair:'Gracias por venir de lejos',
+    tipGenerous:'Propina generosa'},
+
+};
+var lang=localStorage.getItem('taxiti-lang')||'bg';
+
+function setLang(l){
+  lang=l;
+  localStorage.setItem('taxiti-lang',l);
+  var t=T[l]||T.en;
+  // Tabs
+  document.getElementById('tab-map').textContent=t.tabMap;
+  document.getElementById('tab-list').innerHTML='<img src="img/icon-192.png" style="height:14px;vertical-align:-2px;object-fit:contain;margin-right:3px" alt="">'+t.tabList;
+  document.getElementById('tab-how').textContent=t.tabHow;
+  document.getElementById('tab-reg').textContent=t.tabReg;
+  // Search
+  var si=document.getElementById('srch');
+  if(si)si.placeholder=t.search;
+  // Filter labels
+  var fls=document.querySelectorAll('.fl');
+  var labels=[t.sStatus,t.sPayment,t.sStyle,t.sCar,t.sAtm,t.sComfort,t.sLang,t.sExtras];
+  fls.forEach(function(el,i){if(labels[i])el.textContent=labels[i];});
+  // Filter buttons
+  var fm={
+    'all':t.fAll,'online':t.fOnline,'offline':t.fOffline,
+    'revolut':t.fRevolut,'cash':t.fCash,'terminal':t.fTerminal,
+    'sport':t.fSport,'fast':t.fFast,'normal':t.fNormal,'comfort':t.fComfort,
+    'electric':t.fElectric,'sedan':t.fSedan,'suv':t.fSuv,'minivan':t.fMinivan,'luxury':t.fLuxury,
+    'silent':t.fSilent,'talk':t.fTalk,'music':t.fMusic,'chalga':t.fChalga,'nomusic':t.fNomusic,
+    'nosmoker':t.fNosmoker,'smoking':t.fSmoking,'pet':t.fPet,'child':t.fChild,'ac':t.fAc,'wheelchair':t.fWheel,'legroom':t.fLegroom,'panoroof':t.fPanoroof,'streaming':t.fStreaming,'usb':t.fUsb,'tinted':t.fTinted,
+    'airport':t.fAirport,'longdist':t.fLong,'night':t.fNight,'business':t.fBiz,
+    'verified':t.fVerified,'top':t.fTop,'new':t.fNew
+  };
+  document.querySelectorAll('.flt').forEach(function(b){
+    var f=b.getAttribute('data-f');
+    if(f&&fm[f])b.textContent=fm[f];
+  });
+  var rb=document.getElementById('rate-btn');
+  if(rb&&t.mRate)rb.textContent='⭐ '+t.mRate;
+  var pbMap={'pb-hurry':t.pbHurry,'pb-relax':t.pbRelax,'pb-silent':t.pbSilent,'pb-talk':t.pbTalk,'pb-nomusic':t.pbNomusic,'pb-ac':t.pbAc,'pb-luggage':t.pbLuggage};
+  Object.keys(pbMap).forEach(function(id){var el=document.getElementById(id);if(el&&pbMap[id])el.textContent=pbMap[id];});
+  var bc=document.getElementById('btn-call');if(bc&&t.btnCallM)bc.textContent=t.btnCallM;
+  var bv=document.getElementById('btn-vibord');if(bv&&t.btnVibOrd)bv.textContent=t.btnVibOrd;
+  updateFromText();updateToText();
+  var bfc=document.getElementById('btn-from-change');if(bfc)bfc.textContent=t.btnChange||'Change';
+  var btc=document.getElementById('btn-to-change');if(btc)btc.textContent=t.btnSet||'Set';
+  var lph=document.getElementById('loc-picker-hint');if(lph)lph.textContent=t.locPickerHint||'📌 Tap the map to set the point, or paste a Google Maps link below';
+  var lpl=document.getElementById('loc-picker-link');if(lpl)lpl.placeholder=t.locPickerPlaceholder||'Paste Google Maps link (optional)';
+  var howMap={'h-t1':t.hT1,'h-p1':t.hP1,'h-t2':t.hT2,'h-p2':t.hP2,'h-t3':t.hT3,'h-p3':t.hP3,'h-t4':t.hT4,'h-p4':t.hP4,'h-t5':t.hT5,'h-p5':t.hP5,'h-t6':t.hT6,'h-p6':t.hP6};
+  Object.keys(howMap).forEach(function(id){var el=document.getElementById(id);if(el&&howMap[id])el.textContent=howMap[id];});
+  var hcta=document.getElementById('h-cta');if(hcta&&t.hCta)hcta.innerHTML=t.hCta+' <img src="img/icon-192.png" style="height:16px;vertical-align:-3px;object-fit:contain" alt="">';
+  var regMap={'r-free':'\uD83C\uDF89 '+t.rFree,'r-joinnow':t.rJoinnow,'r-spots':t.rSpots,'r-spotsleft':t.rSpotsleft,
+    'r-h1':'\uD83D\uDE95 '+t.rH1,'r-p1':t.rP1,'r-after':t.rAfter,'r-beta':t.rBeta,
+    'r-h2':'\u2705 '+t.rH2,'r-b1t':t.rB1t,'r-b1s':t.rB1s,'r-b2t':t.rB2t,'r-b2s':t.rB2s,
+    'r-b3t':t.rB3t,'r-b3s':t.rB3s,'r-b4t':t.rB4t,'r-b4s':t.rB4s,'r-b5t':t.rB5t,'r-b5s':t.rB5s,'r-b6t':t.rB6t,'r-b6s':t.rB6s,
+    'r-h3':'\uD83D\uDCF8 '+t.rH3,'r-c1t':t.rC1t,'r-c1s':t.rC1s,'r-c2t':t.rC2t,'r-c2s':t.rC2s,
+    'r-c3t':t.rC3t,'r-c3s':t.rC3s,'r-c4t':t.rC4t,'r-c4s':t.rC4s,
+    'r-gdpr':'\uD83D\uDD12 <strong style="color:var(--mu)">GDPR:</strong> '+(t.rGdpr||'').replace(/^GDPR:\s*/i,''),
+    'r-h4':'\uD83D\uDCF1 '+t.rH4,'r-p2':t.rP2,'r-soon':t.rSoon,'r-notify':t.rNotify};
+  Object.keys(regMap).forEach(function(id){
+    var el=document.getElementById(id);
+    if(el&&regMap[id]){
+      if(id==='r-gdpr')el.innerHTML=regMap[id];
+      else el.textContent=regMap[id];
+    }
+  });
+  var rjb=document.getElementById('r-joinbtn');if(rjb&&t.rJoinbtn)rjb.innerHTML=t.rJoinbtn+' <img src="img/icon-192.png" style="height:16px;vertical-align:-3px;object-fit:contain" alt="">';
+  var optMap={
+    'opt-tip-none':t.optNoTip,'opt-tip-small':t.optSmallTip,'opt-tip-fair':t.optFairTip,'opt-tip-generous':t.optGenTip,
+    'opt-pax-2':t.paxOpt2,'opt-pax-3':t.paxOpt3,'opt-pax-4':t.paxOpt4
+  };
+  Object.keys(optMap).forEach(function(id){
+    var el=document.getElementById(id);
+    if(el&&optMap[id])el.textContent=optMap[id];
+  });
+  ['order-tip'].forEach(function(selId){
+    var sel=document.getElementById(selId);
+    if(sel){var v=sel.value;sel.style.display='none';sel.offsetHeight;sel.style.display='';sel.value=v;}
+  });
+  render();
+}
+
+var filt='all', cur=null, map=null, mkrs=[], mapReady=false, tileLayer=null;
+var theme=localStorage.getItem('taxiti_theme')||'light';
+
+function getTileUrl(){
+  return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+}
+function getTileSubdomains(){
+  return 'abc';
+}
+
+function populateTimeSelects(){
+  var h=document.getElementById('order-time-h'),m=document.getElementById('order-time-m');
+  if(!h||!m||h.options.length)return;
+  for(var i=0;i<24;i++){var o=document.createElement('option');var v=(i<10?'0':'')+i;o.value=v;o.textContent=v;h.appendChild(o);}
+  for(var j=0;j<60;j+=5){var o2=document.createElement('option');var v2=(j<10?'0':'')+j;o2.value=v2;o2.textContent=v2;m.appendChild(o2);}
+}
+function setDefaultOrderTime(){
+  var now=new Date();
+  var h=now.getHours(),m=Math.ceil(now.getMinutes()/5)*5;
+  if(m>=60){m=0;h=(h+1)%24;}
+  var hh=(h<10?'0':'')+h,mm=(m<10?'0':'')+m;
+  var hSel=document.getElementById('order-time-h'),mSel=document.getElementById('order-time-m');
+  if(hSel)hSel.value=hh;
+  if(mSel)mSel.value=mm;
+}
+function applyTheme(){
+  if(theme==='dark'){
+    document.documentElement.setAttribute('data-theme','dark');
+    document.getElementById('theme-btn').textContent='☀️';
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    document.getElementById('theme-btn').textContent='🌙';
+  }
+  if(map&&tileLayer){
+    map.removeLayer(tileLayer);
+    tileLayer=L.tileLayer(getTileUrl(),{maxZoom:20,subdomains:getTileSubdomains()}).addTo(map);
+  }
+}
+
+function toggleTheme(){
+  theme=theme==='dark'?'light':'dark';
+  localStorage.setItem('taxiti_theme',theme);
+  applyTheme();
+}
+
+var LM={bg:'🇧🇬 BG',en:'🇬🇧 EN',de:'🇩🇪 DE',fr:'🇫🇷 FR',ru:'🇷🇺 RU',cs:'🇨🇿 CS',it:'🇮🇹 IT',es:'🇪🇸 ES',tr:'🇹🇷 TR',ar:'🇸🇦 AR',zh:'🇨🇳 ZH'};
+
+function payI(p){
+  if(p==='revolut')return '<span class="pi2">💜 Revolut</span>';
+  if(p==='terminal')return '<span class="pi2">💳 Terminal</span>';
+  return '<span class="pi2">💵 Cash</span>';
+}
+
+function stI(d){
+  var t=T[lang]||T.en;
+  if(d.accel<5)return{l:'🏎 '+t.stSport,c:'var(--pi)',s:d.accel+t.stAccel};
+  if(d.accel<6.5)return{l:'⚡ '+t.stFast,c:'var(--or)',s:d.accel+t.stAccel};
+  if(d.comfort)return{l:'🛋 '+t.stComfort,c:'var(--cy)',s:t.stSmooth};
+  return{l:'🚗 '+t.stNormal,c:'var(--gr)',s:t.stBalanced};
+}
+
+function dName(d){return (lang==='bg'&&d.name_bg)?d.name_bg:d.name;}
+
+function carI(d){
+  if(d.car&&d.car.toLowerCase().indexOf('tesla')===0)return '<span style="font-weight:900;font-size:17px;font-family:Arial,sans-serif;color:#e31937;background:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center">T</span>';
+  if(d.minivan)return '🚐';
+  if(d.suv)return '🚙';
+  if(d.luxury)return '👑';
+  if(d.accel<5)return '🏎';
+  return '🚗';
+}
+
+function qc(id){var d=DRIVERS.filter(function(x){return x.id===id;})[0];if(d)window.location.href='tel:'+d.phone;}
+function qv(id){var d=DRIVERS.filter(function(x){return x.id===id;})[0];if(d)window.open('viber://chat?number='+d.phone.replace(/[^0-9]/g,''));}
+
+function card(d,mini){
+  var st=stI(d),ic=carI(d);
+  var av=d.avatar
+    ?'<img src="'+d.avatar+'" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=&quot;none&quot;">'
+    :ic;
+  var tl=T[lang]||T.en;
+  var tags='';
+  if(d.online)tags+='<span class="t tg">'+tl.fOnline+'</span>';
+  else tags+='<span class="t" style="color:var(--mu2);border-color:var(--brd)">'+tl.fOffline+'</span>';
+  if(d.electric)tags+='<span class="t tc">⚡ EV</span>';
+  if(d.luxury)tags+='<span class="t ty">'+tl.fLuxury+'</span>';
+  if(d.minivan)tags+='<span class="t tb">🚐 '+d.seats+'p</span>';
+  if(d.suv)tags+='<span class="t tb">🚙 SUV</span>';
+  tags+='<span class="t" style="color:'+st.c+';border-color:'+st.c+'44;background:'+st.c+'11">'+st.l+'</span>';
+  if(d.nosmoker)tags+='<span class="t ty">🚭</span>';
+  if(d.smoking)tags+='<span class="t tr">🚬</span>';
+  if(d.petfriendly)tags+='<span class="t tp">🐾</span>';
+  if(d.childok)tags+='<span class="t to">👶</span>';
+  if(d.silent_ok)tags+='<span class="t tc">🤫</span>';
+  if(d.airport)tags+='<span class="t tb">✈️</span>';
+  var pays=d.payment.map(payI).join('');
+  var html='<div class="dc" onclick="event.stopPropagation();openMod('+d.id+')">';
+  html+='<div class="dct"><div class="dca">'+av+'</div>';
+  html+='<div class="dci">';
+  html+='<div class="dcn">'+dName(d)+' <span class="vb">'+tl.mVerified+'</span>';
+  html+='<div class="dcc">'+d.car+' &middot; '+d.plate+'</div>';
+  html+='<div class="tags">'+tags+'</div>';
+  html+='<div class="pays">'+pays+'</div>';
+  html+='</div><div class="rb">&#11088; '+d.rating+'</div></div>';
+  if(!mini){
+    html+='<div class="dcb">';
+    html+='<button class="bc" onclick="event.stopPropagation();qc('+d.id+')">📞 Call</button>';
+    html+='<button class="bv" onclick="event.stopPropagation();qv('+d.id+')">💬 Viber</button>';
+    html+='</div>';
+  }
+  html+='</div></div>';
+  return html;
+}
+
+function sf(f,el){
+  filt=f;
+  document.querySelectorAll('.flt').forEach(function(b){b.classList.remove('on');});
+  el.classList.add('on');
+  render();
+}
+
+function render(){
+  var q=(document.getElementById('srch').value||'').toLowerCase();
+  var ds=DRIVERS.slice();
+  if(filt==='online')ds=ds.filter(function(d){return d.online;});
+  if(filt==='offline')ds=ds.filter(function(d){return !d.online;});
+  if(filt==='revolut')ds=ds.filter(function(d){return d.payment.indexOf('revolut')>=0;});
+  if(filt==='cash')ds=ds.filter(function(d){return d.payment.indexOf('cash')>=0;});
+  if(filt==='terminal')ds=ds.filter(function(d){return d.payment.indexOf('terminal')>=0;});
+  if(filt==='sport')ds=ds.filter(function(d){return d.sport;});
+  if(filt==='fast')ds=ds.filter(function(d){return d.fast&&!d.sport;});
+  if(filt==='normal')ds=ds.filter(function(d){return !d.sport&&!d.fast&&!d.comfort;});
+  if(filt==='comfort')ds=ds.filter(function(d){return d.comfort;});
+  if(filt==='electric')ds=ds.filter(function(d){return d.electric;});
+  if(filt==='sedan')ds=ds.filter(function(d){return !d.suv&&!d.minivan&&!d.luxury;});
+  if(filt==='suv')ds=ds.filter(function(d){return d.suv;});
+  if(filt==='minivan')ds=ds.filter(function(d){return d.minivan;});
+  if(filt==='luxury')ds=ds.filter(function(d){return d.luxury;});
+  if(filt==='silent')ds=ds.filter(function(d){return d.silent_ok;});
+  if(filt==='talk')ds=ds.filter(function(d){return d.talk_ok;});
+  if(filt==='music')ds=ds.filter(function(d){return d.music;});
+  if(filt==='chalga')ds=ds.filter(function(d){return d.chalga;});
+  if(filt==='nomusic')ds=ds.filter(function(d){return d.nomusic;});
+  if(filt==='calm')ds=ds.filter(function(d){return d.calm_ok;});
+  if(filt==='mpop')ds=ds.filter(function(d){return d.music_pop;});
+  if(filt==='mchalga')ds=ds.filter(function(d){return d.music_chalga;});
+  if(filt==='mrock')ds=ds.filter(function(d){return d.music_rock;});
+  if(filt==='mclassical')ds=ds.filter(function(d){return d.music_classical;});
+  if(filt==='mjazz')ds=ds.filter(function(d){return d.music_jazz;});
+  if(filt==='melectronic')ds=ds.filter(function(d){return d.music_electronic;});
+  if(filt==='nosmoker')ds=ds.filter(function(d){return d.nosmoker;});
+  if(filt==='smoking')ds=ds.filter(function(d){return d.smoking;});
+  if(filt==='pet')ds=ds.filter(function(d){return d.petfriendly;});
+  if(filt==='child')ds=ds.filter(function(d){return d.childok;});
+  if(filt==='ac')ds=ds.filter(function(d){return d.ac;});
+  if(filt==='wheelchair')ds=ds.filter(function(d){return d.wheelchair;});
+  if(filt==='legroom')ds=ds.filter(function(d){return d.legroom;});
+  if(filt==='panoroof')ds=ds.filter(function(d){return d.panoroof;});
+  if(filt==='streaming')ds=ds.filter(function(d){return d.streaming;});
+  if(filt==='usb')ds=ds.filter(function(d){return d.usb;});
+  if(filt==='tinted')ds=ds.filter(function(d){return d.tinted;});
+  if(filt==='lbg')ds=ds.filter(function(d){return d.langs.indexOf('bg')>=0;});
+  if(filt==='len')ds=ds.filter(function(d){return d.langs.indexOf('en')>=0;});
+  if(filt==='lde')ds=ds.filter(function(d){return d.langs.indexOf('de')>=0;});
+  if(filt==='lfr')ds=ds.filter(function(d){return d.langs.indexOf('fr')>=0;});
+  if(filt==='lru')ds=ds.filter(function(d){return d.langs.indexOf('ru')>=0;});
+  if(filt==='lcs')ds=ds.filter(function(d){return d.langs.indexOf('cs')>=0;});
+  if(filt==='lit')ds=ds.filter(function(d){return d.langs.indexOf('it')>=0;});
+  if(filt==='les')ds=ds.filter(function(d){return d.langs.indexOf('es')>=0;});
+  if(filt==='ltr')ds=ds.filter(function(d){return d.langs.indexOf('tr')>=0;});
+  if(filt==='lar')ds=ds.filter(function(d){return d.langs.indexOf('ar')>=0;});
+  if(filt==='lzh')ds=ds.filter(function(d){return d.langs.indexOf('zh')>=0;});
+  if(filt==='airport')ds=ds.filter(function(d){return d.airport;});
+  if(filt==='longdist')ds=ds.filter(function(d){return d.longdist;});
+  if(filt==='night')ds=ds.filter(function(d){return d.night;});
+  if(filt==='business')ds=ds.filter(function(d){return d.business;});
+  if(filt==='verified')ds=ds.filter(function(d){return d.verified;});
+  if(filt==='top')ds=ds.filter(function(d){return d.rating>=4.8;});
+  if(filt==='new')ds=ds.filter(function(d){return d.reviews<10;});
+  if(q)ds=ds.filter(function(d){return d.name.toLowerCase().indexOf(q)>=0||(d.name_bg||'').toLowerCase().indexOf(q)>=0||d.car.toLowerCase().indexOf(q)>=0||d.areas.toLowerCase().indexOf(q)>=0;});
+  ds.sort(function(a,b){return (b.online?1:0)-(a.online?1:0)||b.rating-a.rating;});
+  var dl=document.getElementById('dlist');
+  if(dl)dl.innerHTML=ds.length?ds.map(function(d){return card(d,false);}).join(''):'<div style="text-align:center;padding:30px;color:var(--mu)">No drivers found with this filter</div>';
+  var ml=document.getElementById('map-list');
+  if(ml)ml.innerHTML=ds.slice(0,3).map(function(d){return card(d,true);}).join('');
+}
+
+function timeAgo(ts){
+  if(!ts)return '';
+  var t=T[lang]||T.en;
+  var s=Math.floor((Date.now()-ts)/1000);
+  if(s<60)return t.agoNow;
+  var m=Math.floor(s/60);
+  if(m<60)return m+t.agoM;
+  var h=Math.floor(m/60);
+  if(h<24)return h+t.agoH;
+  return Math.floor(h/24)+t.agoD;
+}
+function renderMap(){
+  if(!mapReady||!map)return;
+  mkrs.forEach(function(m){try{m.remove();}catch(e){}});mkrs=[];
+  DRIVERS.forEach(function(d){
+    var ic=carI(d);
+    var op=d.online?'1':'0.55';
+    var ring=d.online?'#22c55e':'#777';
+    var mSrc=d.avatar||(d.photos&&d.photos.length?d.photos[0]:null);
+    var inner=mSrc
+      ? '<img src="'+mSrc+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt="">'
+      : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:17px;background:'+(d.online?'#22c55e':'#555')+'">'+ic+'</div>';
+    var m=L.marker([d.lat,d.lng],{icon:L.divIcon({
+      html:'<div style="opacity:'+op+';border:3px solid '+ring+';border-radius:50%;width:38px;height:38px;overflow:hidden;box-shadow:0 2px 8px #000a;background:#111">'+inner+'</div>',
+      iconSize:[38,38],iconAnchor:[19,19],className:''
+    })}).addTo(map);
+    var tp=T[lang]||T.en;
+    var statusLine=d.online?'<span style="color:#22c55e">🟢 '+tp.onlineNow+'</span>':'<span style="color:#999">⚫ '+tp.lastSeen+' '+timeAgo(d.lastSeen)+'</span>';
+    m.bindPopup('<div style="text-align:center"><b>'+dName(d)+'</b><br>'+d.car+'<br>&#11088; '+d.rating+'<br>'+statusLine+'<br><button onclick="openMod('+d.id+')" style="margin-top:6px;background:#f5c518;color:#000;border:none;border-radius:6px;padding:5px 12px;font-weight:700;cursor:pointer">'+tp.mViewProfile+'</button></div>');
+    m.on('click',function(){openMod(d.id);});
+    mkrs.push(m);
+  });
+}
+
+function openMod(id){
+  cur=DRIVERS.filter(function(d){return d.id===id;})[0];
+  if(!cur)return;
+  track('profile_open');
+  var d=cur,st=stI(d),t=T[lang]||T.en;
+  selectedPrefs=[];
+  document.querySelectorAll('.pref-btn').forEach(function(b){b.classList.remove('on');});
+  fromMode='gps';fromLat=null;fromLng=null;toLat=null;toLng=null;
+  updateFromText();updateToText();
+  closeLocPicker();
+  var ms=document.getElementById('order-music');if(ms)ms.value='';
+  var ts=document.getElementById('order-tip');if(ts)ts.value='';
+  var ps=document.getElementById('order-pax');if(ps)ps.value='2';
+  var pw=document.getElementById('pax-warning');if(pw)pw.style.display='none';
+  setWhenMode('now');
+  var od=document.getElementById('order-date');if(od){var today=new Date();od.min=today.toISOString().slice(0,10);od.value='';}
+  populateTimeSelects();setDefaultOrderTime();
+  var mav=document.getElementById('mav');
+  if(d.avatar){
+    var img=document.createElement('img');img.src=d.avatar;img.style.cssText='width:100%;height:100%;object-fit:cover';mav.innerHTML='';mav.appendChild(img);
+  } else { mav.innerHTML=carI(d); }
+  document.getElementById('mname').innerHTML=dName(d)+' <span class="vb">'+t.mVerified+'</span>';
+  document.getElementById('mcar2').textContent=d.car+' · '+d.plate;
+  document.getElementById('mstars').innerHTML='<span style="color:var(--y);font-size:20px">'+'★'.repeat(Math.round(d.rating))+'</span> <strong>'+d.rating+'</strong> <span style="color:var(--mu);font-size:12px">('+d.reviews+' '+t.mReviews+')</span>';
+  var summaryParts=[];
+  if(d.sport)summaryParts.push((t.sumFast||'Can drive fast')+' ('+d.accel+'s 0-100)');
+  if(d.calm_ok)summaryParts.push(t.sumCalm||'or calmly &mdash; your choice');
+  if(d.talk_ok&&d.silent_ok)summaryParts.push(t.sumTalkSilent||'happy to talk or stay silent');
+  else if(d.talk_ok)summaryParts.push(t.sumTalk||'enjoys conversation');
+  else if(d.silent_ok)summaryParts.push(t.sumSilent||'prefers quiet rides');
+  var musicGenres=[];
+  if(d.music_chillout)musicGenres.push('Chillout');
+  if(d.music_lounge)musicGenres.push('Lounge');
+  if(d.music_pop)musicGenres.push('Pop');
+  if(d.music_chalga)musicGenres.push('Chalga');
+  if(d.music_rock)musicGenres.push('Rock');
+  if(d.music_classical)musicGenres.push('Classical');
+  if(d.music_jazz)musicGenres.push('Jazz');
+  if(d.music_electronic)musicGenres.push('Electronic');
+  if(musicGenres.length)summaryParts.push((t.sumMusic||'plays')+' '+musicGenres.join(', '));
+  document.getElementById('mstyle').innerHTML='<strong style="color:'+st.c+'">'+st.l+'</strong> &mdash; '+summaryParts.join(' &middot; ')+'.<br><span style="color:var(--or);font-size:11px">&#9888; '+t.mWarn+'.</span>';
+  document.getElementById('mcardet').innerHTML=
+    '<div class="ir"><span class="ik">'+t.mType+'</span><span class="iv">'+(({'electric':t.fElectric,'sedan':t.fSedan,'suv':t.fSuv,'minivan':t.fMinivan,'luxury':t.fLuxury})[d.car_type]||d.car_type)+'</span></div>'+
+    '<div class="ir"><span class="ik">'+t.mSeats+'</span><span class="iv">'+d.seats+' '+t.mPassengers+'</span></div>'+
+    '<div class="ir"><span class="ik">'+t.mAccel+'</span><span class="iv" style="color:'+st.c+'">'+d.accel+'s</span></div>'+
+    '<div class="ir"><span class="ik">'+t.mElectric+'</span><span class="iv">'+(d.electric?'&#9989; '+t.mYes:'&#8212;')+'</span></div>'+
+    '<div class="ir"><span class="ik">'+t.mAC+'</span><span class="iv">'+(d.ac?'&#9989; '+t.mYes:'&#8212;')+'</span></div>';
+  document.getElementById('mpay').innerHTML=d.payment.map(payI).join(' ');
+  document.getElementById('mlangs').innerHTML=d.langs.map(function(l){return '<span class="t tb">'+(LM[l]||l)+'</span>';}).join(' ');
+  var oreq=t.onRequest||'on request';
+  var epay=t.extraFee||'extra charge';
+  var optDefs=[
+    [d.nosmoker,'ty',t.fNosmoker],[d.smoking,'tr',t.fSmoking],
+    [d.petfriendly,'tp',t.fPet],[d.childok,'to',t.fChild],
+    [d.silent_ok,'tc',t.fSilent],[d.talk_ok,'tg',t.fTalk],
+    [d.music,'tp',t.fMusic],[d.nomusic,'ty',t.fNomusic],
+    [d.airport,'tb',t.fAirport],[d.longdist,'tb',t.fLong],
+    [d.night,'tc',t.fNight],[d.business,'ty',t.fBiz],
+    [d.wheelchair,'tg',t.fWheel],[d.legroom,'to',t.fLegroom],
+    [d.panoroof,'tb',t.fPanoroof],[d.streaming,'tp',t.fStreaming],[d.usb,'tg',t.fUsb],[d.tinted,'to',t.fTinted],
+    [d.chalga,'tpi',t.fChalga]
+  ];
+  var opts=[];
+  optDefs.forEach(function(o){
+    if(o[0]===true)opts.push('<span class="t '+o[1]+'">'+o[2]+'</span>');
+    else if(o[0]==='ask')opts.push('<span class="t task">'+o[2]+' &middot; '+oreq+'</span>');
+    else if(o[0]==='paid')opts.push('<span class="t task">'+o[2]+' &middot; '+epay+'</span>');
+  });
+  document.getElementById('mopts').innerHTML=opts.join(' ')||'—';
+  var mph=document.getElementById('mphotos'),mhph=document.getElementById('mh-photos');
+  if(d.photos&&d.photos.length){
+    var ph=d.photos.slice();if(d.id===1&&ph.indexOf('img/emil_tariff.jpg')<0)ph.push('img/emil_tariff.jpg');
+    mph.innerHTML=ph.map(function(p){return '<img src="'+p+'" onclick="showImg(\''+p+'\')" onerror="this.remove()" alt="">';}).join('');
+    mhph.style.display='';mhph.textContent=t.mPhotos||'Car Photos';
+  } else {
+    mph.innerHTML='';mhph.style.display='none';
+  }
+  document.getElementById('mprice').textContent=d.tariff?(d.tariff.km_day.toFixed(2)+' EUR/km '+t.prDay+' · '+d.tariff.km_night.toFixed(2)+' EUR/km '+t.prNight+' · '+t.prStart+' '+d.tariff.start.toFixed(2)+' EUR'):d.price;
+  (function(){
+    var old=document.getElementById('tariff-photo-line');if(old)old.remove();
+    if(d.tariff_photo){
+      var a=document.createElement('div');a.id='tariff-photo-line';
+      a.style.cssText='margin-top:6px';
+      a.innerHTML='<img src="'+d.tariff_photo+'" onclick="showImg(\''+d.tariff_photo+'\')" style="height:54px;border-radius:8px;border:1px solid #d4af37;cursor:pointer;vertical-align:middle" alt="Тарифа"> <span style="font-size:12px;color:#8a7a3a">📋 Официална тарифна табела — докосни за увеличение. По нея се смята прогнозната цена.</span>';
+      var anchor=document.getElementById('mprice');
+      anchor.parentNode.insertBefore(a,anchor.nextSibling);
+    }
+  })();
+  updateEtaLine();
+  document.getElementById('mareas').textContent=(d.city==='sofia'&&t.emilAreas)?t.emilAreas:d.areas;
+  document.getElementById('mbio').textContent=(d.bio_key&&t[d.bio_key])?t[d.bio_key]:(d.bio||'');
+  document.getElementById('mh-cardet').textContent=t.mCarDet;
+  document.getElementById('mh-order').textContent=t.mBeforeOrder;
+  var lm=document.getElementById('lbl-musicstyle');if(lm)lm.textContent=t.lblMusic;
+  var lt2=document.getElementById('lbl-tip');if(lt2)lt2.textContent=t.lblTip;
+  var lp=document.getElementById('lbl-pax');if(lp)lp.textContent=t.lblPax||'👥 Passengers';
+  var lw=document.getElementById('lbl-when');if(lw)lw.textContent=t.lblWhen||'🕒 When';
+  var bwn=document.getElementById('btn-when-now');if(bwn)bwn.textContent=t.btnNow||'Now';
+  var bwl=document.getElementById('btn-when-later');if(bwl)bwl.textContent=t.btnSchedule||'📅 Schedule';
+  var sw=document.getElementById('schedule-warning');if(sw)sw.textContent=t.scheduleWarn||'⚠️ This is a booking request, not a confirmed ride. Wait for the driver to confirm by call or message before considering it booked.';
+  if(typeof checkPaxWarning==='function')checkPaxWarning();
+  document.getElementById('mh-pay').textContent=t.mPayment;
+  document.getElementById('mh-langs').textContent=t.mLangs;
+  document.getElementById('mh-opts').textContent=t.mOpts;
+  document.getElementById('mh-price').textContent=t.mPrice;
+  document.getElementById('mh-areas').textContent=t.mAreas;
+  document.getElementById('mh-about').textContent=t.mAbout;
+  document.getElementById('modal').className='modal on';
+  setLang(lang);
+  var sel=document.getElementById('lang-sel');
+  if(sel) sel.value=lang;
+}
+
+function closeMod(){document.getElementById('modal').className='modal';}
+function showImg(src){document.getElementById('imglb-img').src=src;document.getElementById('imglb').style.display='flex';}
+function hideImg(){document.getElementById('imglb').style.display='none';}
+function doCall(){if(cur)window.location.href='tel:'+cur.phone;}
+function doVib(){if(cur)window.open('viber://chat?number='+cur.phone.replace(/[^0-9]/g,''));}
+
+var selectedPrefs=[];
+var whenMode='now';
+var userLat=null,userLng=null;
+var fromMode='gps';
+var fromLat=null,fromLng=null;
+var toLat=null,toLng=null;
+var pickerTarget=null,pickerMap=null,pickerMarker=null,pickerTouched=false;
+
+function togglePref(el,p){
+  var i=selectedPrefs.indexOf(p);
+  if(i>=0){selectedPrefs.splice(i,1);el.classList.remove('on');}
+  else{selectedPrefs.push(p);el.classList.add('on');}
+}
+function setWhenMode(mode){
+  whenMode=mode;
+  var btnNow=document.getElementById('btn-when-now'),btnLater=document.getElementById('btn-when-later');
+  var fields=document.getElementById('schedule-fields'),warn=document.getElementById('schedule-warning');
+  if(mode==='now'){
+    btnNow.classList.add('on');btnLater.classList.remove('on');
+    fields.style.display='none';warn.style.display='none';
+  } else {
+    btnNow.classList.remove('on');btnLater.classList.add('on');
+    fields.style.display='flex';warn.style.display='block';
+  }
+}
+function checkPaxWarning(){
+  var t=T[lang]||T.en;
+  var paxSel=document.getElementById('order-pax');
+  var pax=paxSel?parseInt(paxSel.value,10):2;
+  var hasLuggage=selectedPrefs.indexOf('luggage')>=0;
+  var warn=document.getElementById('pax-warning');
+  if(pax>=3&&hasLuggage){
+    warn.textContent=t.paxWarn||'⚠️ 3-4 passengers with luggage — please call first to confirm everything fits comfortably.';
+    warn.style.display='block';
+  } else {
+    warn.style.display='none';
+  }
+}
+
+var PREF_LABELS={
+  hurry:"I'm in a hurry",relax:'Please drive calmly',silent:'Prefer silence',
+  talk:'Happy to chat',music:'Music please',nomusic:'No music please',
+  ac:'A/C please',luggage:'I have luggage'
+};
+
+function updateFromText(){
+  var t=T[lang]||T.en;
+  var el=document.getElementById('from-text');
+  if(!el)return;
+  el.textContent=(fromMode==='custom'&&fromLat)?(t.pickupCustom||'Pickup: custom point set'):(t.pickupGps||'Pickup: my location (GPS)');
+}
+function updateToText(){
+  var t=T[lang]||T.en;
+  var el=document.getElementById('to-text');
+  if(!el)return;
+  el.textContent=toLat?((t.destSet||'Destination: point set')+' ✓ ('+toLat.toFixed(4)+', '+toLng.toFixed(4)+')'):(t.destNotSet||'Destination: not set (optional)');
+  showLiveEstimate();
+}
+function showLiveEstimate(){
+  var el=document.getElementById('est-line');
+  if(!el){
+    var anchor=document.getElementById('to-text');
+    if(!anchor)return;
+    el=document.createElement('div');el.id='est-line';
+    el.style.cssText='font-size:13px;color:var(--y);margin-top:6px;font-weight:600';
+    anchor.parentNode.insertBefore(el,anchor.nextSibling);
+  }
+  if(!toLat||!toLng){el.textContent='';return;}
+  var fLat=(fromMode==='custom'&&fromLat)?fromLat:userLat;
+  var fLng=(fromMode==='custom'&&fromLng)?fromLng:userLng;
+  if((!fLat||!fLng)&&fromMode!=='custom'&&navigator.geolocation){
+    el.textContent='⏳ …';
+    navigator.geolocation.getCurrentPosition(function(p){
+      userLat=p.coords.latitude;userLng=p.coords.longitude;
+      showLiveEstimate();
+    },function(){el.textContent='';},{timeout:6000,maximumAge:120000});
+    return;
+  }
+  if(!fLat||!fLng){el.textContent='';return;}
+  var t=T[lang]||T.en;
+  el.textContent='⏳ '+(t.estCalc||'Calculating estimate…');
+  fetchEstimate(fLat,fLng,toLat,toLng,function(e){
+    var pr=cur?calcPrice(e.km,cur):null;
+    var s='📐 ≈ '+e.km+' km · ~'+e.min+' min';
+    if(pr)s+=' · ~'+pr+' € ('+(isNightTariff()?(t.tariffNight||'night'):(t.tariffDay||'day'))+', по офиц. тарифа, ориентировъчно)';
+    el.textContent=s;
+  });
+}
+function openLocPicker(target){
+  pickerTarget=target;
+  pickerTouched=false;
+  var panel=document.getElementById('loc-picker');
+  panel.style.display='block';
+  var linkInput=document.getElementById('loc-picker-link');if(linkInput)linkInput.value='';
+  panel.scrollIntoView({behavior:'smooth',block:'nearest'});
+  setTimeout(function(){
+    if(!pickerMap){
+      pickerMap=L.map('loc-picker-map',{zoomControl:false,attributionControl:false}).setView([42.6977,23.3219],13);
+      L.tileLayer(getTileUrl(),{maxZoom:20,subdomains:getTileSubdomains()}).addTo(pickerMap);
+      pickerMarker=L.marker([42.6977,23.3219],{draggable:true}).addTo(pickerMap);
+      pickerMap.on('click',function(e){pickerMarker.setLatLng(e.latlng);pickerTouched=true;});
+      pickerMarker.on('dragend',function(){pickerTouched=true;});
+    } else {
+      pickerMap.invalidateSize();
+    }
+    var lat=target==='from'?(fromLat||userLat):toLat;
+    var lng=target==='from'?(fromLng||userLng):toLng;
+    if(lat&&lng){pickerMap.setView([lat,lng],15);pickerMarker.setLatLng([lat,lng]);pickerTouched=true;}
+    else{pickerMap.setView([42.6977,23.3219],13);pickerMarker.setLatLng([42.6977,23.3219]);}
+  },80);
+}
+function closeLocPicker(){
+  document.getElementById('loc-picker').style.display='none';
+}
+function useGpsForPicker(){
+  var btn=document.getElementById('btn-picker-gps');if(btn)btn.textContent='⏳ ...';
+  requestLocationForOrder(function(lat,lng){
+    if(btn)btn.textContent='📍 My GPS';
+    if(lat&&lng&&pickerMap){pickerMap.setView([lat,lng],15);pickerMarker.setLatLng([lat,lng]);pickerTouched=true;}
+  });
+}
+function parseMapsLink(){
+  var inp=document.getElementById('loc-picker-link');
+  var val=inp.value;
+  var warn=document.getElementById('loc-picker-warn');
+  if(!warn){
+    warn=document.createElement('div');warn.id='loc-picker-warn';
+    warn.style.cssText='font-size:11px;color:#f59e0b;margin:-2px 0 6px;line-height:1.4';
+    inp.parentNode.insertBefore(warn,inp.nextSibling);
+  }
+  var m=val.match(/(-?\d{1,3}\.\d+),\s*(-?\d{1,3}\.\d+)/);
+  if(m&&pickerMap){
+    var lat=parseFloat(m[1]),lng=parseFloat(m[2]);
+    pickerMap.setView([lat,lng],16);
+    pickerMarker.setLatLng([lat,lng]);
+    pickerTouched=true;
+    warn.textContent='';
+  } else if(/goo\.gl|maps\.app/.test(val)){
+    warn.textContent='⚠️ Съкратен линк — не съдържа координати. Отвори го в браузър и копирай пълния адрес, или просто докосни точката на картата.';
+  } else if(val.length>10){
+    warn.textContent='⚠️ Не откривам координати в линка. Докосни картата вместо това.';
+  } else { warn.textContent=''; }
+}
+function confirmLocPicker(){
+  if(!pickerTouched){
+    alert('📍 Не е избрана точка. Докосни мястото на картата (или постави пълен Google Maps линк с координати), после натисни ✅.');
+    return;
+  }
+  var pos=pickerMarker.getLatLng();
+  if(pickerTarget==='from'){
+    fromMode='custom';fromLat=pos.lat;fromLng=pos.lng;
+    updateFromText();
+  } else {
+    toLat=pos.lat;toLng=pos.lng;
+    updateToText();
+  }
+  closeLocPicker();
+}
+function requestLocationForOrder(cb){
+  var lt=document.getElementById('from-text');
+  if(!navigator.geolocation){
+    if(lt)lt.textContent='Location unavailable on this device';
+    cb(null,null);
+    return;
+  }
+  if(lt)lt.textContent='⏳ Getting your location...';
+  navigator.geolocation.getCurrentPosition(
+    function(pos){
+      userLat=pos.coords.latitude;
+      userLng=pos.coords.longitude;
+      if(fromMode==='gps')updateFromText();
+      cb(userLat,userLng);
+    },
+    function(err){
+      if(lt)lt.textContent='⚠️ Location denied — sharing without it';
+      cb(null,null);
+    },
+    {enableHighAccuracy:true,timeout:8000,maximumAge:30000}
+  );
+}
+
+var MUSIC_LABELS={pop:'Pop',chalga:'Chalga',rock:'Rock',classical:'Classical',jazz:'Jazz',electronic:'Electronic',chillout:'Chillout',lounge:'Lounge',none:'No music'};
+var TIP_LABELS={small:'A small tip',fair:'A fair tip — thanks for coming far',generous:'A generous tip'};
+
+
+function getPrefLabel(key){
+  var t=T[lang]||T.en;
+  var map={
+    hurry:t.prefHurry||"I'm in a hurry",
+    relax:t.prefRelax||'Please drive calmly',
+    silent:t.prefSilent||'Prefer silence',
+    talk:t.prefTalk||'Happy to chat',
+    music:t.prefMusic||'Music please',
+    nomusic:t.prefNomusic||'No music please',
+    ac:t.prefAc||'A/C please',
+    luggage:t.prefLuggage||'I have luggage'
+  };
+  return map[key]||key;
+}
+function getMusicLabel(key){
+  var t=T[lang]||T.en;
+  var map={
+    pop:t.musicPop||'Pop',chalga:t.musicChalga||'Chalga',rock:t.musicRock||'Rock',
+    classical:t.musicClassical||'Classical',jazz:t.musicJazz||'Jazz',
+    electronic:t.musicElectronic||'Electronic',chillout:t.musicChillout||'Chillout',
+    lounge:t.musicLounge||'Lounge',none:t.musicNone||'No music'
+  };
+  return map[key]||key;
+}
+function getTipLabel(key){
+  var t=T[lang]||T.en;
+  var map={
+    small:t.tipSmall||'A small tip',
+    fair:t.tipFair||'A fair tip',
+    generous:t.tipGenerous||'A generous tip'
+  };
+  return map[key]||key;
+}
+function buildOrderMessage(lat,lng){
+  var t=T[lang]||T.en;
+  var lines=[];
+  lines.push(t.orderHeader||'🚕 TAXITI order request');
+  lines.push('');
+  var dateEl=document.getElementById('order-date'),timeH=document.getElementById('order-time-h'),timeM=document.getElementById('order-time-m');
+  var timeVal=(timeH&&timeH.value&&timeM&&timeM.value)?(timeH.value+':'+timeM.value):'';
+  if(whenMode==='later'&&dateEl&&dateEl.value){
+    var whenStr=dateEl.value+(timeVal?' '+timeVal:'');
+    lines.push((t.orderWhen||'📅 Requested time:')+' '+whenStr);
+    lines.push(t.orderConfirmNote||'⚠️ Please confirm this booking by replying.');
+  } else {
+    lines.push(t.orderNow||'🕒 Now (ASAP)');
+  }
+  var paxSel=document.getElementById('order-pax');
+  var pax=paxSel?paxSel.value:'2';
+  lines.push((t.orderPax||'• Passengers:')+' '+(pax==='2'?'1-2':pax));
+  var hasLuggage=selectedPrefs.indexOf('luggage')>=0;
+  if(parseInt(pax,10)>=3&&hasLuggage){
+    lines.push(t.paxWarnMsg||'⚠️ Please confirm luggage fits before booking');
+  }
+  if(selectedPrefs.length){
+    lines.push(t.orderPrefs||'My preferences:');
+    selectedPrefs.forEach(function(p){
+      lines.push('• '+getPrefLabel(p));
+    });
+  }
+  var musicSel=document.getElementById('order-music');
+  if(musicSel&&musicSel.value){
+    lines.push((t.orderMusic||'• Music:')+' '+getMusicLabel(musicSel.value));
+  }
+  var tipSel=document.getElementById('order-tip');
+  if(tipSel&&tipSel.value){
+    lines.push('• '+getTipLabel(tipSel.value));
+  }
+  lines.push('');
+  if(lat&&lng){
+    lines.push((fromMode==='custom'?(t.orderPickup||'📍 Pickup location:'):(t.orderLocation||'📍 My location:')));
+    lines.push('https://maps.google.com/?q='+lat+','+lng);
+  } else {
+    lines.push(t.orderNoLocation||'📍 Location not shared — please ask for pickup address');
+  }
+  if(toLat&&toLng){
+    lines.push('');
+    lines.push(t.orderDest||'🏁 Destination:');
+    lines.push('https://maps.google.com/?q='+toLat+','+toLng);
+    if(lat&&lng){
+      lines.push('');
+      lines.push('🗺 '+(t.orderRoute||'Route')+':');
+      lines.push('https://www.google.com/maps/dir/?api=1&origin='+lat+','+lng+'&destination='+toLat+','+toLng+'&travelmode=driving');
+      if(__est){
+        var pr=cur?calcPrice(__est.km,cur):null;
+        var eLine='≈ '+__est.km+' km · ~'+__est.min+' min';
+        if(pr)eLine+=' · ~'+pr+' € ('+(isNightTariff()?(t.tariffNight||'night'):(t.tariffDay||'day'))+')';
+        lines.push(eLine);
+      }
+    }
+  }
+  return lines.join('\n');
+}
+
+var __est=null;
+function haversineKm(a,b,c,d){var R=6371,dLa=(c-a)*Math.PI/180,dLo=(d-b)*Math.PI/180;
+  var h=Math.sin(dLa/2)*Math.sin(dLa/2)+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dLo/2)*Math.sin(dLo/2);
+  return R*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));}
+function isNightTariff(){var h=new Date().getHours();return h>=22||h<6;}
+function calcPrice(km,drv){
+  if(!drv||!drv.tariff)return null;
+  var rate=isNightTariff()?drv.tariff.km_night:drv.tariff.km_day;
+  var st=(isNightTariff()&&drv.tariff.start_night)?drv.tariff.start_night:drv.tariff.start;
+  return Math.round((st+km*rate)*10)/10;
+}
+// OSRM реално разстояние с 2.5с timeout, fallback haversine*1.35
+function fetchEstimate(fLat,fLng,tLat,tLng,cb){
+  var done=false;
+  function finish(km,min,src){if(done)return;done=true;__est={km:Math.round(km*10)/10,min:Math.round(min),src:src};cb(__est);}
+  var fbKm=haversineKm(fLat,fLng,tLat,tLng)*1.35;
+  var timer=setTimeout(function(){finish(fbKm,fbKm/0.42,'approx');},2500);
+  try{
+    fetch('https://router.project-osrm.org/route/v1/driving/'+fLng+','+fLat+';'+tLng+','+tLat+'?overview=false')
+      .then(function(r){return r.json();})
+      .then(function(d){
+        clearTimeout(timer);
+        if(d.routes&&d.routes[0]){finish(d.routes[0].distance/1000,d.routes[0].duration/60+3,'osrm');}
+        else{finish(fbKm,fbKm/0.42,'approx');}
+      }).catch(function(){clearTimeout(timer);finish(fbKm,fbKm/0.42,'approx');});
+  }catch(e){clearTimeout(timer);finish(fbKm,fbKm/0.42,'approx');}
+}
+function resolvePickupLocation(cb){
+  if(fromMode==='custom'&&fromLat&&fromLng){cb(fromLat,fromLng);}
+  else{requestLocationForOrder(cb);}
+}
+function doVibOrder(){
+  if(!cur)return;
+  resolvePickupLocation(function(lat,lng){
+    function go(){
+    var msg=buildOrderMessage(lat,lng);
+    var url='viber://forward?text='+encodeURIComponent(msg);
+    // Some Viber versions need chat number first, then user pastes — try direct chat with number to be safe
+    var chatUrl='viber://chat?number='+cur.phone.replace(/[^0-9]/g,'');
+    // Open chat, then copy message to clipboard as fallback so user can paste
+    try{
+      if(navigator.clipboard){navigator.clipboard.writeText(msg);}
+    }catch(e){}
+    window.location.href=chatUrl;
+    setTimeout(function(){
+      alert('📋 Your order details copied to clipboard:\n\n'+msg+'\n\nPaste this message in the Viber chat that just opened.');
+    },600);
+    }
+    gentleChime();track('order_viber');
+    if(lat&&lng&&toLat&&toLng){fetchEstimate(lat,lng,toLat,toLng,function(){go();});}
+    else{go();}
+  });
+}
+
+function doWAOrder(){
+  if(!cur)return;
+  resolvePickupLocation(function(lat,lng){
+    function go(){
+      var msg=buildOrderMessage(lat,lng);
+      var waUrl='https://wa.me/'+cur.phone.replace(/[^0-9]/g,'')+'?text='+encodeURIComponent(msg);
+      window.location.href=waUrl;
+    }
+    gentleChime();track('order_wa');
+    if(lat&&lng&&toLat&&toLng){fetchEstimate(lat,lng,toLat,toLng,function(){go();});}
+    else{go();}
+  });
+}
+
+function doSMSOrder(){
+  if(!cur)return;
+  resolvePickupLocation(function(lat,lng){
+    function go(){
+      var msg=buildOrderMessage(lat,lng);
+      var num='+'+cur.phone.replace(/[^0-9]/g,'');
+      // iOS използва '&body=', Android '?body='
+      var sep=/iPhone|iPad|iPod/i.test(navigator.userAgent)?'&':'?';
+      window.location.href='sms:'+num+sep+'body='+encodeURIComponent(msg);
+    }
+    gentleChime();track('order_sms');
+    if(lat&&lng&&toLat&&toLng){fetchEstimate(lat,lng,toLat,toLng,function(){go();});}
+    else{go();}
+  });
+}
+function openRate(){alert('Rating system coming soon.');}
+
+function showTab(t){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('on');});
+  document.querySelectorAll('.tab').forEach(function(b){b.classList.remove('on');});
+  document.getElementById('page-'+t).classList.add('on');
+  document.getElementById('tab-'+t).classList.add('on');
+  if(t==='map'){
+    initMapOnce();
+    setTimeout(function(){if(map)map.invalidateSize();},300);
+  }
+}
+
+var youMarker=null;
+// ═══ СЕМПЛА ПОРЪЧКА: едно докосване → GPS → Viber ═══
+var PREF_LABELS={quiet:'🤫 Предпочитам тишина',talk:'💬 Готов за разговор',calm:'🐢 Моля, карайте спокойно',music:'🎵 Музика'};
+function getPrefs(){try{return JSON.parse(localStorage.getItem('ft_prefs')||'null');}catch(e){return null;}}
+function tgPref(b){b.dataset.on=b.dataset.on==='1'?'':'1';b.style.background=b.dataset.on==='1'?'#f0b429':'#1a1a1a';b.style.color=b.dataset.on==='1'?'#111':'#ccc';}
+function savePrefs(){
+  var p={tags:[],pax:document.getElementById('pf-pax').value||''};
+  document.querySelectorAll('#prefs-prompt .pf').forEach(function(b){if(b.dataset.on==='1')p.tags.push(b.dataset.k);});
+  localStorage.setItem('ft_prefs',JSON.stringify(p));
+  localStorage.setItem('ft_prefs_done','1');
+  document.getElementById('prefs-prompt').style.display='none';
+  document.getElementById('hero-sub').innerHTML='✅ Запазено! Следващата поръчка идва с твоите предпочитания автоматично.';
+  track('prefs_saved');
+}
+function dismissPrefs(){
+  localStorage.setItem('ft_prefs_done','1');
+  document.getElementById('prefs-prompt').style.display='none';
+}
+function pickOnlineDriver(){
+  var on=DRIVERS.filter(function(d){return d.online;});
+  return on.length?on[0]:DRIVERS[0];
+}
+function orderNowSimple(){
+  var d=pickOnlineDriver();
+  if(!d){alert('В момента няма шофьор на линия. Опитай след малко.');return;}
+  var btn=document.getElementById('hero-btn-txt');
+  btn.textContent='📍 ВЗИМАМ ЛОКАЦИЯТА…';
+  gentleChime();
+  track('order_simple');
+  function go(lat,lng){
+    var lines=['🚕 TAXITI — БЪРЗА ПОРЪЧКА','','🕒 Сега (веднага)'];
+    var p=getPrefs();
+    if(p){
+      if(p.pax)lines.push('• Пътници: '+p.pax);
+      if(p.tags&&p.tags.length){lines.push('Предпочитания:');p.tags.forEach(function(t){if(PREF_LABELS[t])lines.push('• '+PREF_LABELS[t]);});}
+    }
+    lines.push('');
+    if(lat&&lng){lines.push('📍 Моята локация:');lines.push('https://maps.google.com/?q='+lat+','+lng);}
+    else{lines.push('📍 Локация: ще я пратя в чата (GPS отказан)');}
+    lines.push('');lines.push('☎️ Потвърждение на този номер.');
+    var msg=lines.join('\n');
+    try{navigator.clipboard.writeText(msg);}catch(e){}
+    var num='+'+d.phone.replace(/[^0-9]/g,'');
+    var sep=/iPhone|iPad|iPod/i.test(navigator.userAgent)?'&':'?';
+    window.location.href='sms:'+num+sep+'body='+encodeURIComponent(msg);
+    btn.textContent='ПОРЪЧАЙ СЕГА';
+    // след първата поръчка — предложи запазване на предпочитания
+    if(!localStorage.getItem('ft_prefs_done')){
+      setTimeout(function(){document.getElementById('prefs-prompt').style.display='block';},1500);
+    }
+  }
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      function(pos){userLat=pos.coords.latitude;userLng=pos.coords.longitude;sendPresence();go(userLat,userLng);},
+      function(){go(null,null);},
+      {enableHighAccuracy:true,timeout:9000,maximumAge:60000});
+  }else{go(null,null);}
+}
+// ── Анонимен analytics beacon (веднъж на събитие/сесия където има смисъл) ──
+function track(ev){
+  try{
+    var payload=JSON.stringify({event:ev});
+    if(navigator.sendBeacon){navigator.sendBeacon(WORKER+'/track',new Blob([payload],{type:'application/json'}));}
+    else{fetch(WORKER+'/track',{method:'POST',headers:{'Content-Type':'application/json'},body:payload,keepalive:true});}
+  }catch(e){}
+}
+if(!sessionStorage.getItem('ft_pv')){sessionStorage.setItem('ft_pv','1');track('pageview');}
+
+// ── Нежен звук (Web Audio, две меки ноти) ──
+var audioCtx=null;
+function gentleChime(){
+  try{
+    if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended')audioCtx.resume();
+    [[523.25,0],[783.99,0.16]].forEach(function(n){
+      var o=audioCtx.createOscillator(),g=audioCtx.createGain();
+      o.type='sine';o.frequency.value=n[0];
+      g.gain.setValueAtTime(0,audioCtx.currentTime+n[1]);
+      g.gain.linearRampToValueAtTime(0.12,audioCtx.currentTime+n[1]+0.03);
+      g.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+n[1]+0.7);
+      o.connect(g);g.connect(audioCtx.destination);
+      o.start(audioCtx.currentTime+n[1]);o.stop(audioCtx.currentTime+n[1]+0.75);
+    });
+  }catch(e){}
+}
+
+// ── Анонимно присъствие: загрубена локация → точка на търсене за шофьорите (10 мин) ──
+var presenceSent=false;
+function sendPresence(){
+  if(presenceSent||!userLat||!userLng)return;
+  presenceSent=true;
+  try{
+    fetch(WORKER+'/presence',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({lat:Math.round(userLat*1000)/1000,lng:Math.round(userLng*1000)/1000})});
+  }catch(e){}
+}
+function initMapOnce(){
+  if(mapReady||typeof L==='undefined')return;
+  mapReady=true;
+  map=L.map('map',{zoomControl:true,attributionControl:false}).setView([42.6977,23.3219],15);
+  tileLayer=L.tileLayer(getTileUrl(),{maxZoom:20,subdomains:getTileSubdomains()}).addTo(map);
+  renderMap();
+  // 📍 бутон "центрирай на мен"
+  var LocateCtl=L.Control.extend({options:{position:'bottomright'},
+    onAdd:function(){
+      var b=L.DomUtil.create('button');
+      b.innerHTML='📍';
+      b.title='Моята локация';
+      b.style.cssText='width:44px;height:44px;font-size:20px;border:none;border-radius:50%;background:#fff;box-shadow:0 2px 8px #0006;cursor:pointer';
+      L.DomEvent.on(b,'click',function(e){L.DomEvent.stop(e);centerOnUser(true);});
+      return b;
+    }});
+  map.addControl(new LocateCtl());
+  // Центрирай около ползвателя (ако позволи локация)
+  centerOnUser(false);
+}
+function updateEtaLine(){
+  var el=document.getElementById('eta-line');
+  if(!el){
+    var anchor=document.getElementById('mprice');
+    if(!anchor)return;
+    el=document.createElement('div');el.id='eta-line';
+    el.style.cssText='font-size:14px;font-weight:700;color:#0a7d4f;margin-top:4px';
+    anchor.parentNode.insertBefore(el,anchor.nextSibling);
+  }
+  if(!cur||!cur.online||!userLat||!userLng){el.textContent='';return;}
+  fetchEstimate(cur.lat,cur.lng,userLat,userLng,function(e){
+    if(cur&&cur.online)el.textContent='🚗 ~'+e.min+' мин до теб ('+e.km+' км)';
+  });
+}
+function centerOnUser(announce){
+  if(!navigator.geolocation){if(announce)alert('Устройството няма достъп до локация.');return;}
+  navigator.geolocation.getCurrentPosition(function(p){
+    userLat=p.coords.latitude;userLng=p.coords.longitude;
+    var dKm=haversineKm(userLat,userLng,42.6977,23.3219);
+    if(dKm<60||announce){
+      var pts=[[userLat,userLng]];
+      DRIVERS.forEach(function(d){if(d.lat&&d.lng)pts.push([d.lat,d.lng]);});
+      if(pts.length>1){map.fitBounds(pts,{padding:[36,36],maxZoom:14});}
+      else{map.setView([userLat,userLng],14);}
+      if(youMarker){try{youMarker.remove();}catch(e){}}
+      youMarker=L.marker([userLat,userLng],{icon:L.divIcon({
+        html:'<div style="background:#3b82f6;border:3px solid #fff;border-radius:50%;width:16px;height:16px;box-shadow:0 0 0 6px #3b82f644"></div>',
+        iconSize:[16,16],iconAnchor:[8,8],className:''
+      }),interactive:false}).addTo(map);
+      updateEtaLine();
+      sendPresence();
+    }
+  },function(err){
+    if(announce)alert('📍 Достъпът до локация е отказан за TAXITI. Разреши го от настройките на браузъра (иконата вляво от адреса → Разрешения → Локация).');
+  },{timeout:8000,maximumAge:120000});
+}
+
+function pollGPS(){
+  fetch(WORKER+'/gps').then(function(r){return r.json();}).then(function(data){
+    if(!data.ok||!data.drivers.length)return;
+    data.drivers.forEach(function(g){
+      var dr=DRIVERS.filter(function(d){return String(d.gps_id||d.id)===String(g.driver_id);})[0];
+      if(!dr)return;
+      dr.lat=g.lat;dr.lng=g.lng;dr.online=g.online;
+      dr.lastSeen=g.online?Date.now():(g.updated_at||dr.lastSeen);
+    });
+    render();renderMap();
+    var el=document.getElementById('gps-status');
+    if(el){var on=DRIVERS.filter(function(d){return d.online;}).length;el.textContent=on>0?'🟢 '+on+' online':'';}
+  }).catch(function(){});
+}
+
+document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeMod();});
+
+applyTheme();
+populateTimeSelects();
+render();
+pollGPS();
+setInterval(pollGPS,15000);
+// Init map immediately on load
+initMapOnce();
+
+// PWA Install handling
+var deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',function(e){
+  e.preventDefault();
+  deferredPrompt=e;
+  var btn=document.getElementById('install-btn');
+  if(btn)btn.style.display='inline-block';
+});
+function installApp(){
+  if(!deferredPrompt)return;
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(function(choice){
+    deferredPrompt=null;
+    var btn=document.getElementById('install-btn');
+    if(btn)btn.style.display='none';
+  });
+}
+window.addEventListener('appinstalled',function(){
+  var btn=document.getElementById('install-btn');
+  if(btn)btn.style.display='none';
+});
+// Service worker disabled - was causing cross-origin fetch issues with images
+// Unregister any existing service worker (cleanup from previous version)
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.getRegistrations().then(function(regs){
+    regs.forEach(function(reg){reg.unregister();});
+  });
+}
+</script>
+<div id="build-stamp" style="text-align:center;font-size:10px;color:#666;padding:8px 0 14px;opacity:.7">TAXITI v2026.07.13-d</div>
+<script>console.log('[TAXITI] build v2026.07.13-d');</script>
+</body>
+</html><!-- rebuild trigger -->
