@@ -35,11 +35,59 @@ jobs:
           sed -i 's|первых 300 водителей|первых 50 водителей в каждом городе|g; s|первые 300 водителей|первые 50 водителей в каждом городе|g' index.html
           sed -i 's|i primi 300 autisti nel mondo|i primi 50 autisti per città|g; s|i primi 300 autisti|i primi 50 autisti per città|g' index.html
           sed -i 's|los primeros 300 conductores en el mundo|los primeros 50 conductores por ciudad|g; s|los primeros 300 conductores|los primeros 50 conductores por ciudad|g' index.html
+          # Демо флот: инжектиране на скрипта
+          sed -i 's|</body>|<script src="demo-fleet.js"></script></body>|' index.html
+
+      - name: Generate demo fleet from newest TAXI registry data
+        run: |
+          FILE=$(curl -s -H "Authorization: Bearer ${{ github.token }}" \
+            "https://api.github.com/repos/emillion-lab/TAXI/contents/" \
+            | python3 -c "
+          import json,sys,re
+          fs=[f['name'] for f in json.load(sys.stdin) if re.match(r'taxi_data_Sofia\d',f['name'])]
+          def k(n):
+              m=re.search(r'(\d{1,2})\.(\d{1,2})\.(\d{2,4})',n); d,mo,y=int(m.group(1)),int(m.group(2)),int(m.group(3))
+              return (y+2000 if y<100 else y,mo,d)
+          print(max(fs,key=k))")
+          echo "Using registry: $FILE"
+          curl -s -o /tmp/reg.json "https://raw.githubusercontent.com/emillion-lab/TAXI/main/$FILE"
+          python3 - <<'EOF'
+          import json, hashlib, random
+          reg = json.load(open('/tmp/reg.json'))
+          lst = reg if isinstance(reg, list) else reg.get('data')
+          AV = ['🧔','👨','👨‍🦱','👨‍🦳','🧑','👩','👨‍🦲','🕺','😎','🧢','👴','🙂']
+          out = []
+          for r in lst:
+              name = (r.get('operatorName') or '').upper()
+              if 'ОН-СИТИТРАНС' in name: firm = 'ON'
+              elif 'ОТ-СИТИТРАНС' in name: firm = 'OT'
+              else: continue
+              vehicles = [v for v in (r.get('vehicles') or []) if v.get('registerNumber')]
+              drivers = [d for d in (r.get('drivers') or []) if d.get('driverName')]
+              if not vehicles: continue
+              for i, d in enumerate(drivers):
+                  v = vehicles[i % len(vehicles)]
+                  seed = int(hashlib.md5((d['driverName'] + v['registerNumber']).encode()).hexdigest()[:8], 16)
+                  rnd = random.Random(seed)
+                  out.append({
+                      'n': d['driverName'].title(),
+                      'm': (v.get('markAndModel') or '—').title(),
+                      'p': v['registerNumber'],
+                      'f': firm,
+                      'lat': round(42.635 + rnd.random() * 0.115, 5),
+                      'lng': round(23.245 + rnd.random() * 0.205, 5),
+                      'on': 1 if rnd.random() > 0.3 else 0,
+                      'av': AV[seed % len(AV)],
+                      'r': round(4.2 + rnd.random() * 0.8, 1),
+                      'y': 1 + seed % 24,
+                  })
+          json.dump(out, open('demo-fleet.json', 'w'), ensure_ascii=False, separators=(',', ':'))
+          print('demo fleet:', len(out), 'drivers')
+          EOF
 
       - name: Generate TAXITI icons (yellow, black text, taxi checkers)
         run: |
           mkdir -p img
-          # Шахматни квадратчета 32px, два реда с офсет — горе и долу
           D=""
           for y in 0 448; do
             for x in $(seq 0 64 480); do D="$D rectangle $x,$y $((x+32)),$((y+32))"; done
@@ -50,7 +98,6 @@ jobs:
           convert img/icon-512.png -resize 192x192 img/icon-192.png
           convert img/icon-512.png -resize 180x180 img/icon-180.png
           cp img/icon-512.png favicon.png
-          # OG изображение с пълното име
           D2=""
           for y in 0 566; do
             for x in $(seq 0 64 566); do D2="$D2 rectangle $x,$y $((x+32)),$((y+32))"; done
@@ -79,5 +126,5 @@ jobs:
           git config user.name taxiti-bot
           git config user.email taxiti-bot@users.noreply.github.com
           git add -A
-          git commit -m "import: rebranded copy of FISHTAXI (TAXITI checkers branding, 50/city free slots)"
+          git commit -m "import: TAXITI + Sititrans demo fleet from newest registry"
           git push
