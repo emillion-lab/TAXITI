@@ -55,7 +55,13 @@ jobs:
           import json, hashlib, random
           reg = json.load(open('/tmp/reg.json'))
           lst = reg if isinstance(reg, list) else reg.get('data')
-          AV = ['🧔','👨','👨‍🦱','👨‍🦳','🧑','👩','👨‍🦲','🕺','😎','🧢','👴','🙂']
+          AV_M = ['🧔','👨','👨‍🦱','👨‍🦳','🧑','👨‍🦲','😎','🧢','👴','🕺']
+          AV_F = ['👩','👩‍🦱','👱‍♀️','👩‍🦰','🙋‍♀️','👵']
+          def avatar(full, seed):
+              first = full.split()[0] if full.split() else ''
+              fem = first.endswith(('А', 'Я')) and first not in ('НИКОЛА', 'ИЛИЯ', 'ПЕТКА')
+              pool = AV_F if fem else AV_M
+              return pool[seed % len(pool)]
           out = []
           for r in lst:
               name = (r.get('operatorName') or '').upper()
@@ -77,7 +83,7 @@ jobs:
                       'lat': round(42.635 + rnd.random() * 0.115, 5),
                       'lng': round(23.245 + rnd.random() * 0.205, 5),
                       'on': 1 if rnd.random() > 0.3 else 0,
-                      'av': AV[seed % len(AV)],
+                      'av': avatar(d['driverName'].upper(), seed),
                       'r': round(4.2 + rnd.random() * 0.8, 1),
                       'y': 1 + seed % 24,
                   })
@@ -126,5 +132,5 @@ jobs:
           git config user.name taxiti-bot
           git config user.email taxiti-bot@users.noreply.github.com
           git add -A
-          git commit -m "import: TAXITI + Sititrans demo fleet from newest registry"
+          git commit -m "import: TAXITI + Sititrans demo fleet (gendered avatars)"
           git push
