@@ -1,0 +1,66 @@
+name: import-from-fishtaxi
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/import.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Clone source
+        run: git clone --depth 1 https://github.com/emillion-lab/FISHTAXI /tmp/src
+
+      - name: Copy and rebrand
+        run: |
+          cp /tmp/src/index.html /tmp/src/manifest.json /tmp/src/sw.js .
+          touch .nojekyll
+          sed -i 's|https://fish.taxi/|https://emillion-lab.github.io/TAXITI/|g' index.html
+          sed -i 's|fish\.taxi|TAXITI|g' index.html manifest.json
+          sed -i 's|fishtaxi-lang|taxiti-lang|g; s|fishtaxi_theme|taxiti_theme|g' index.html
+          sed -i 's|276 / 300|50 / 50|g; s|276/300|50/50|g' index.html
+          sed -i 's|300 drivers|50 drivers per city|g' index.html
+          sed -i 's|300 шофьора|50 шофьора на град|g' index.html
+          sed -i 's|300 Fahrer|50 Fahrer pro Stadt|g' index.html
+          sed -i 's|les 300 premiers chauffeurs dans le monde|les 50 premiers chauffeurs par ville|g; s|les 300 premiers chauffeurs|les 50 premiers chauffeurs par ville|g' index.html
+          sed -i 's|первых 300 водителей|первых 50 водителей в каждом городе|g; s|первые 300 водителей|первые 50 водителей в каждом городе|g' index.html
+          sed -i 's|i primi 300 autisti nel mondo|i primi 50 autisti per città|g; s|i primi 300 autisti|i primi 50 autisti per città|g' index.html
+          sed -i 's|los primeros 300 conductores en el mundo|los primeros 50 conductores por ciudad|g; s|los primeros 300 conductores|los primeros 50 conductores por ciudad|g' index.html
+
+      - name: Generate TAXITI icons (no fish)
+        run: |
+          mkdir -p img
+          convert -size 512x512 xc:'#f5c518' -gravity center -pointsize 300 -font DejaVu-Sans-Bold -fill '#0a0a0a' -annotate +0+10 'T' img/icon-512.png
+          convert img/icon-512.png -resize 192x192 img/icon-192.png
+          convert img/icon-512.png -resize 180x180 img/icon-180.png
+          cp img/icon-512.png favicon.png
+          convert -size 630x630 xc:'#0a0a0a' -gravity center -pointsize 110 -font DejaVu-Sans-Bold -fill '#f5c518' -annotate +0+0 'TAXITI' img/og-image.jpg
+
+      - name: Driver placeholder
+        run: |
+          cat > driver.html <<'EOF'
+          <!doctype html>
+          <html lang="bg">
+          <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1">
+          <title>TAXITI — Driver</title>
+          <style>body{background:#0a0a0a;color:#f0f0f0;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;text-align:center;padding:20px}h1{color:#f5c518}</style>
+          </head>
+          <body><div><h1>TAXITI Driver</h1><p>Шофьорското приложение идва скоро.<br>The driver app is coming soon.</p></div></body>
+          </html>
+          EOF
+
+      - name: Commit
+        run: |
+          git config user.name taxiti-bot
+          git config user.email taxiti-bot@users.noreply.github.com
+          git add -A
+          git commit -m "import: rebranded copy of FISHTAXI (TAXITI, 50/city free slots, generated icons)"
+          git push
