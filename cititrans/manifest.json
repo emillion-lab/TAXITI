@@ -1,0 +1,27 @@
+{
+  "name": "ТаксиТиТранс — Шофьор",
+  "short_name": "ТТ Шофьор",
+  "description": "Шофьорски терминал на СИТИТРАНС: смяна, БАК и КАТ на един екран.",
+  "start_url": "./",
+  "scope": "./",
+  "id": "/TAXITI/cititrans/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "lang": "bg",
+  "icons": [
+    {
+      "src": "logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
