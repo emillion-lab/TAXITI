@@ -1,0 +1,24 @@
+name: Patch Sim Fleet
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'index.html'
+      - 'scripts/patch_sim_fleet.py'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply sim-fleet switch
+        run: |
+          python3 scripts/patch_sim_fleet.py
+          node --check sim-fleet.js && echo 'SIM SYNTAX OK'
+          git config user.name ci; git config user.email ci@taxiti
+          git add index.html
+          git diff --cached --quiet && echo 'нищо за commit' && exit 0
+          git commit -m "sim: index.html зарежда живия sim-fleet.js вместо статичния demo-fleet.js [skip ci]"
+          git fetch origin main && git rebase origin/main || true
+          git push
