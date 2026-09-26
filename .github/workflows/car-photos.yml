@@ -1,0 +1,19 @@
+name: Car photos
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  photos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Снимки на моделите (Wikimedia Commons)
+        run: python3 scripts/build_car_photos.py
+      - name: Commit
+        run: |
+          git config user.name ci; git config user.email ci@taxiti
+          git add img/cars
+          git diff --cached --quiet && echo 'нищо за commit' && exit 0
+          git commit -m "pilot: снимки на моделите от Wikimedia Commons [skip ci]"
+          for i in 1 2 3; do git fetch origin main && git rebase origin/main && git push && break; sleep 3; done
