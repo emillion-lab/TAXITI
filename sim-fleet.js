@@ -81,7 +81,7 @@ function makeProfile(src){
   if(R()<0.7)ex.push('nosmoke'); if(R()<0.25)ex.push('pets'); if(R()<0.12)ex.push('child'); if(R()<0.5)ex.push('airport');
   if(R()<0.35)ex.push('en'); if(R()<0.4)ex.push('quiet');
   if(/кад|туран|афира|лоджи|докер|орландо|макс|кубо|фиорино|такума|пикасо|сценик|румстър|практик|тоурер|спортурер| ст$/.test(m.trim()))ex.push('bigtrunk');
-  return {t:T,music:mus,ex:ex};
+  return {t:T,music:mus,ex:ex,eco:/тесла|приус|айоник/.test(m)};  // eco → зелено такси
 }
 var PHOTOS={};   // img/cars/index.json: модел → {f,by,lic,url}
 
@@ -197,7 +197,7 @@ var CSS=
 '.tcar{transition:transform 1s linear;will-change:transform}'+
 '.tz-noanim .tcar{transition:none!important}'+
 '.tcar .tc-rot{width:14px;height:24px;transition:transform .6s ease-out;filter:drop-shadow(0 1px 1.5px rgba(0,0,0,.55))}'+
-'.tcar svg{display:block}.tcar.parked .tc-rot{opacity:.82}'+
+'.tcar svg{display:block}.tcar.parked .tc-rot{opacity:.82}.tcar.eco svg rect:first-child{fill:#26b05c}'+
 '#thud{position:absolute;left:10px;top:10px;z-index:650;max-width:calc(100% - 20px);background:rgba(10,10,10,.86);'+
 '-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);color:#eee;border:1px solid rgba(245,197,24,.35);border-radius:12px;'+
 'padding:7px 11px;font:600 12px/1.45 system-ui,-apple-system,sans-serif;pointer-events:none;box-shadow:0 4px 14px rgba(0,0,0,.35)}'+
@@ -249,7 +249,7 @@ function draw(){
     shown++;
     c.rot+=((c.hdg-c.rot+540)%360)-180;                           // най-късото завъртане
     if(!c.mk){
-      c.mk=L.marker([c.lat,c.lng],{icon:L.divIcon({className:'tcar',iconSize:[14,24],iconAnchor:[7,12],
+      c.mk=L.marker([c.lat,c.lng],{icon:L.divIcon({className:'tcar'+(c.x.eco?' eco':''),iconSize:[14,24],iconAnchor:[7,12],
         html:'<div class="tc-rot" style="transform:rotate('+c.rot.toFixed(0)+'deg)">'+CAR_SVG+'</div>'})});
       (function(cc){cc.mk.on('click',function(){openSheet(cc);});})(c);
       layer.addLayer(c.mk);
@@ -287,7 +287,7 @@ function openSheet(c){
     var km=distM(c.lat,c.lng,window.userLat,window.userLng)/1000*1.35;
     if(km<30)eta='<div class="tsh-eta">~'+Math.max(2,Math.round(km/25*60+1))+' '+t.away+'</div>';
   }
-  var car=ph?('<img src="img/cars/'+esc(ph.f)+'" alt="'+esc(c.m)+'" loading="lazy" onerror="this.remove()"><span class="tsh-face">'+esc(c.av)+'</span>')
+  var car=ph?('<img src="img/cars/'+esc(ph.t||ph.f)+'" alt="'+esc(c.m)+'" loading="lazy" onerror="this.remove()"><span class="tsh-face">'+esc(c.av)+'</span>')
             :esc(c.av);
   function tr(lbl,km,st,wt,on){return '<div class="tsh-tr'+(on?' on':'')+'"><span>'+lbl+'</span><b>'+km.toFixed(2)+' €'+t.km+'</b>'+
     '<span class="x">'+t.start+' '+st.toFixed(2)+' € · '+t.wait+' '+wt.toFixed(2)+' €'+t.perMin+'</span></div>';}
