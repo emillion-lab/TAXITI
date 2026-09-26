@@ -9,6 +9,10 @@
 Избор на кадър: за всеки модел се търсят до ~12 снимки в Commons ("<модел> taxi", "<модел>")
 плюс водещата от Wikipedia. Предпочита се кадър, в който колата вече е цветна (ако е жълта/зелена —
 още по-добре): там боядисването по нюанс на ламарината е чисто. Бели/сиви коли — само ако няма друго.
+
+Изключение: за модели в FORCE_LOCAL това търсене исторически е връщало грешно поколение на модела
+(винтидж, ръждиво, чужд пазар) вместо реалната кола — за тях пропускаме Commons търсенето и
+боядисваме директно локалния кадър, който build_car_photos.py вече е взел коректно от Wikipedia.
 Изход: img/cars/taxi/<slug>.jpg + index.json полета t, eco, by, lic, url (кредитът е на избрания кадър)."""
 import html, io, json, os, re, sys, time, urllib.parse, urllib.request
 import numpy as np
@@ -20,6 +24,11 @@ DST = 'img/cars/taxi'
 YELLOW = (245, 197, 24)   # такси жълто, както на картата
 GREEN = (38, 176, 92)     # еко такси
 ECO = ('tesla', 'ioniq', 'prius')   # по име на файла
+
+# Модели, за които Commons "<модел> taxi" / "<модел>" търсенето подбира грешно поколение
+# (Шкода Октавия -> класиката от 1959-71; Опел Астра -> старо ръждиво западноафр. такси) —
+# проверено визуално 26.09.2026. Не пипа опашка на пресни грешки, само тези две.
+FORCE_LOCAL = {'skoda-octavia.jpg', 'opel-astra.jpg'}
 
 
 def _blur(x, r):
@@ -46,7 +55,7 @@ def analyse(img, session):
     hs = hue[sel & (chroma > 0.10)]
     ref = float(np.arctan2(np.median(np.sin(hs)), np.median(np.cos(hs)))) if hs.size else 0.0
     dh = np.abs(np.angle(np.exp(1j * (hue - ref))))
-    coh = float(((dh < 0.5) & (chroma > 0.10) & car).sum()) / n      # дял „боядисана“ ламарина
+    coh = float(((dh < 0.5) & (chroma > 0.10) & car).sum()) / n      # дял „боядисана" ламарина
     return {'im': im, 'mask': mask, 'area': n / float(H * W), 'aspect': bw / float(bh),
             'cropped': (xs.min() <= 1 and xs.max() >= W - 2), 'chroma': ch, 'hue': ref, 'coh': coh}
 
@@ -142,6 +151,17 @@ def strip_html(x):
     return html.unescape(re.sub(r'<[^>]+>', '', x or '')).strip()
 
 
+def local_attribution(url0):
+    """Дърпа Artist/License за вече свалената локална снимка (url0), за да не изгубим атрибуцията
+    когато боядисваме локалния кадър вместо да търсим нов в Commons (виж FORCE_LOCAL)."""
+    name = urllib.parse.unquote(url0.rsplit('File:', 1)[-1]).replace('_', ' ')
+    m = commons(action='query', prop='imageinfo', iiprop='extmetadata', titles='File:' + name)
+    cp = next(iter(m.get('query', {}).get('pages', {}).values()), {})
+    md = (cp.get('imageinfo') or [{}])[0].get('extmetadata', {})
+    return (strip_html(md.get('Artist', {}).get('value'))[:60] or 'Wikimedia Commons',
+            strip_html(md.get('LicenseShortName', {}).get('value')))
+
+
 def candidates(title, lead_url):
     short = re.sub(r'\s+(\d{4}|t\d+)$', '', re.sub(r'\s*\(.*\)', '', title), flags=re.I)
     names = []
@@ -192,20 +212,30 @@ def main(only=None):
         title = v0.get('title') or os.path.splitext(f)[0].replace('-', ' ')
         rgb = GREEN if any(k in f for k in ECO) else YELLOW
         best, bs, bf = None, -9, None
-        try:
-            cands = candidates(title, v0.get('url0') or v0.get('url'))
-        except Exception as e:
-            print('  candidates fail', e); cands = []
-        for c in cands:
+        if f in FORCE_LOCAL:
+            url0 = v0.get('url0') or v0.get('url')
             try:
-                img = Image.open(io.BytesIO(get(c['thumb'], raw=True)))
-                ft = analyse(img, session)
+                img = Image.open(os.path.join(SRC, f))
+                bf = analyse(img, session)
+                by, lic = local_attribution(url0)
+                best, bs = {'name': f, 'by': by, 'lic': lic, 'url': url0}, 0
             except Exception as e:
-                print('  skip', c['name'], e); continue
-            sc = score(ft, rgb) + (0.3 if c['lead'] else 0)
-            if sc > bs:
-                best, bs, bf = c, sc, ft
-            time.sleep(0.3)
+                print('  локален кадър fail', f, e)
+        else:
+            try:
+                cands = candidates(title, v0.get('url0') or v0.get('url'))
+            except Exception as e:
+                print('  candidates fail', e); cands = []
+            for c in cands:
+                try:
+                    img = Image.open(io.BytesIO(get(c['thumb'], raw=True)))
+                    ft = analyse(img, session)
+                except Exception as e:
+                    print('  skip', c['name'], e); continue
+                sc = score(ft, rgb) + (0.3 if c['lead'] else 0)
+                if sc > bs:
+                    best, bs, bf = c, sc, ft
+                time.sleep(0.3)
         if best is None or bs < 0:
             print('%-34s без подходящ кадър — оставям оригинала' % f); continue
         out = paint(bf['im'], rgb, session, bf)
