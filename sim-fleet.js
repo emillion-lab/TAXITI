@@ -17,21 +17,40 @@ var CFG={
   pPark:0.0045,       // на пътя → стоянка (пази ~75% от онлайн паркирани)
   standRadius:350     // м — паркираните се разпределят по пътни възли около стоянката
 };
-var TARIFF={start:0.60, km:1.20, kmNight:1.45, cur:'€'};
+/* Тарифи — Наредба № 34, чл.21 ал.1 т.12 + решение на СОС за 2026 (€/км):
+   старт = 2× до 3× МИНИМАЛНАТА цена/км за съответната тарифа; престой ≤ 50% от цената/км. */
+var LIM={dMin:0.73,dMax:1.24,nMin:0.84,nMax:1.52};
+var pMaxTariff=0.66;  // дял на колите на максимална тарифа (цел: поне 60%)
 var STANDS=[ // стоянки, гари, молове, болници, летище
  [42.6953,23.4062],[42.6881,23.3950],[42.7118,23.3212],[42.6853,23.3192],[42.6964,23.3217],
  [42.6906,23.3350],[42.6920,23.3532],[42.6571,23.3142],[42.6628,23.3842],[42.6981,23.3080],
  [42.6640,23.2882],[42.6788,23.3277],[42.6258,23.3740],[42.6873,23.3057],[42.6716,23.3231]
 ];
+var MUSIC=['pop','chalga','radio','rock','retro','bgpop','electronic','jazz','classic'];
+var MUSIC_W=[18,16,14,12,10,9,8,5,3];
 var STR={
  bg:{live:'живо',road:'на пътя',park:'на стоянка',off:'офлайн',exp:'стаж',yrs:'г.',tariff:'Тарифа',
      start:'старт',night:'нощна',km:'/км',order:'🚕 Поръчай',away:'мин',
      noContact:'Този шофьор все още не е публикувал данни за контакт в TAXITI, затова поръчката не може да бъде изпратена.',
-     seeVerified:'Виж шофьори с публикуван контакт',close:'Затвори'},
+     seeVerified:'Виж шофьори с публикуван контакт',close:'Затвори',
+     musicH:'🎵 Музика в колата',extrasH:'✨ Екстри',day:'☀️ Дневна',nightT:'🌙 Нощна',wait:'престой',perMin:'/мин',
+     photo:'Примерна снимка на модела',
+     music:{pop:'🎤 Поп',chalga:'🎶 Чалга',radio:'📻 Радио и новини',rock:'🎸 Рок',retro:'🕺 Ретро 80-90',
+            bgpop:'🇧🇬 Българска естрада',electronic:'🎧 Електронна',jazz:'🎷 Джаз',classic:'🎻 Класика'},
+     ex:{ev:'⚡ Електромобил',hybrid:'🔋 Хибрид',ac:'❄️ Климатик',usb:'🔌 USB зарядно',card:'💳 Карта',revolut:'💜 Revolut',
+         nosmoke:'🚭 Непушач',pets:'🐾 Домашни любимци',child:'👶 Детско столче',airport:'✈️ Летище',
+         en:'🇬🇧 English',quiet:'🤫 Тишина по желание',bigtrunk:'🧳 Голям багажник'}},
  en:{live:'live',road:'on the road',park:'at a stand',off:'offline',exp:'exp.',yrs:'yrs',tariff:'Tariff',
      start:'start',night:'night',km:'/km',order:'🚕 Order',away:'min',
      noContact:'This driver has not published contact details on TAXITI yet, so the order cannot be sent.',
-     seeVerified:'See drivers with published contact',close:'Close'}
+     seeVerified:'See drivers with published contact',close:'Close',
+     musicH:'🎵 Music in the car',extrasH:'✨ Extras',day:'☀️ Day',nightT:'🌙 Night',wait:'waiting',perMin:'/min',
+     photo:'Representative photo of the model',
+     music:{pop:'🎤 Pop',chalga:'🎶 Chalga',radio:'📻 Radio & news',rock:'🎸 Rock',retro:'🕺 80s-90s',
+            bgpop:'🇧🇬 Bulgarian pop',electronic:'🎧 Electronic',jazz:'🎷 Jazz',classic:'🎻 Classical'},
+     ex:{ev:'⚡ Electric',hybrid:'🔋 Hybrid',ac:'❄️ A/C',usb:'🔌 USB charger',card:'💳 Card',revolut:'💜 Revolut',
+         nosmoke:'🚭 Non-smoker',pets:'🐾 Pets OK',child:'👶 Child seat',airport:'✈️ Airport',
+         en:'🇬🇧 English',quiet:'🤫 Quiet ride on request',bigtrunk:'🧳 Large trunk'}}
 };
 function S(){return STR[window.lang]||STR.en;}
 
@@ -42,6 +61,29 @@ function rand(n){return Math.floor(Math.random()*n);}
 function rndSpeed(){return (CFG.speed[0]+Math.random()*(CFG.speed[1]-CFG.speed[0]))/3.6;} // м/с
 function isNight(){var h=new Date().getHours();return h>=22||h<6;}
 function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch];});}
+
+/* ---------- Профил на шофьора (детерминиран по номер — еднакъв при всяко зареждане) ---------- */
+function hashStr(s){var h=2166136261;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function prng(seed){return function(){seed=(seed+0x6D2B79F5)|0;var t=Math.imul(seed^(seed>>>15),1|seed);
+  t=(t+Math.imul(t^(t>>>7),61|t))^t;return ((t^(t>>>14))>>>0)/4294967296;};}
+function r2(x){return Math.round(x*100)/100;}
+function makeProfile(src){
+  var R=prng(hashStr(String(src.p)+'|'+String(src.n))), T={}, mult;
+  if(R()<pMaxTariff){T.d=LIM.dMax;T.n=LIM.nMax;mult=R()<0.7?3:2.5;T.wf=0.5;T.max=true;}
+  else{T.d=r2(0.95+R()*0.25);T.n=Math.min(LIM.nMax,r2(T.d*LIM.nMax/LIM.dMax));mult=2+R()*0.5;T.wf=0.35;}
+  T.sd=r2(mult*LIM.dMin); T.sn=r2(mult*LIM.nMin); T.wd=r2(T.wf*T.d); T.wn=r2(T.wf*T.n);
+  var k=1+(R()<0.6?1:0)+(R()<0.25?1:0), mus=[], w=MUSIC_W.slice();
+  while(mus.length<k){var tot=0,i;for(i=0;i<w.length;i++)tot+=w[i];var x=R()*tot;
+    for(i=0;i<w.length;i++){x-=w[i];if(x<=0)break;} i=Math.min(i,w.length-1); mus.push(MUSIC[i]); w[i]=0;}
+  var ex=[], m=String(src.m||'').toLowerCase();
+  if(/тесла/.test(m))ex.push('ev'); else if(/приус|айоник/.test(m))ex.push('hybrid');
+  if(R()<0.95)ex.push('ac'); if(R()<0.6)ex.push('usb'); if(R()<0.55)ex.push('card'); if(R()<0.2)ex.push('revolut');
+  if(R()<0.7)ex.push('nosmoke'); if(R()<0.25)ex.push('pets'); if(R()<0.12)ex.push('child'); if(R()<0.5)ex.push('airport');
+  if(R()<0.35)ex.push('en'); if(R()<0.4)ex.push('quiet');
+  if(/кад|туран|афира|лоджи|докер|орландо|макс|кубо|фиорино|такума|пикасо|сценик|румстър|практик|тоурер|спортурер| ст$/.test(m.trim()))ex.push('bigtrunk');
+  return {t:T,music:mus,ex:ex};
+}
+var PHOTOS={};   // img/cars/index.json: модел → {f,by,lic,url}
 
 /* ---------- Пътен граф ---------- */
 var G=null, CELL=0.004, standNodes=[];
@@ -119,7 +161,7 @@ function startDriving(c,node){
   c.lat=G.lat[node]; c.lng=G.lng[node]; c.hdg=segBrg(node,nx);
 }
 function makeCar(src){
-  var c={n:src.n,m:src.m,p:src.p,f:src.f,av:src.av,r:src.r,y:src.y,
+  var c={n:src.n,m:src.m,p:src.p,f:src.f,av:src.av,r:src.r,y:src.y,x:makeProfile(src),
          lat:0,lng:0,hdg:Math.random()*360,rot:0,state:'offline',a:-1,b:-1,t:0,len:1,spd:rndSpeed(),mk:null,jump:false};
   var u=Math.random();
   if(u<CFG.pOffline){c.state='offline';placeAtStand(c);}
@@ -163,17 +205,27 @@ var CSS=
 '#tsh-bg{position:fixed;inset:0;z-index:1400;display:none}#tsh-bg.on{display:block}'+
 '#tsheet{position:fixed;left:0;right:0;bottom:0;z-index:1401;max-width:560px;margin:0 auto;background:var(--s1,#fff);color:var(--tx,#111);'+
 'border-radius:20px 20px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.35);padding:8px 16px calc(16px + env(safe-area-inset-bottom,0px));'+
-'transform:translateY(105%);transition:transform .28s cubic-bezier(.2,.8,.2,1);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}'+
+'transform:translateY(105%);transition:transform .28s cubic-bezier(.2,.8,.2,1);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;'+
+'max-height:86vh;overflow-y:auto;-webkit-overflow-scrolling:touch}'+
 '#tsheet.on{transform:none}'+
 '.tsh-grab{width:40px;height:5px;border-radius:3px;background:var(--brd,#ccc);margin:2px auto 12px}'+
 '.tsh-head{display:flex;align-items:center;gap:12px}'+
-'.tsh-av{width:52px;height:52px;border-radius:50%;background:var(--s2,#eee);display:flex;align-items:center;justify-content:center;font-size:30px;flex-shrink:0}'+
+'.tsh-car{position:relative;width:92px;height:60px;border-radius:12px;background:var(--s2,#eee);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:30px}'+
+'.tsh-car img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:12px}'+
+'.tsh-face{position:absolute;right:-7px;bottom:-7px;width:28px;height:28px;border-radius:50%;background:var(--s1,#fff);border:2px solid #f5c518;font-size:16px;display:flex;align-items:center;justify-content:center;z-index:1}'+
+'.tsh-h{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--mu,#666);margin:12px 0 6px}'+
+'.tsh-tags{display:flex;flex-wrap:wrap;gap:6px}'+
+'.tsh-tags span{font-size:12.5px;font-weight:600;padding:5px 10px;border-radius:999px;background:var(--s2,#eee);border:1px solid var(--brd,#ddd)}'+
+'.tsh-tar{margin:14px 0 12px;border:1px solid var(--brd,#ddd);border-radius:12px;overflow:hidden}'+
+'.tsh-tr{display:flex;align-items:baseline;gap:8px;padding:9px 12px;font-size:13px;flex-wrap:wrap}'+
+'.tsh-tr+.tsh-tr{border-top:1px solid var(--brd,#ddd)}.tsh-tr b{font-size:15px}'+
+'.tsh-tr .x{color:var(--mu,#666);font-size:12px;margin-left:auto}.tsh-tr.on{background:rgba(245,197,24,.14)}'+
+'.tsh-credit{font-size:10.5px;color:var(--mu,#777);margin-top:10px;line-height:1.35}.tsh-credit a{color:inherit}'+
 '.tsh-id{flex:1;min-width:0}.tsh-name{font-size:17px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'+
 '.tsh-sub{font-size:13px;color:var(--mu,#666);margin-top:2px}'+
 '.tsh-eta{font-size:13px;font-weight:800;background:#f5c518;color:#111;border-radius:10px;padding:6px 9px;white-space:nowrap}'+
 '.tsh-chips{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 8px}'+
 '.tsh-chips span{font-size:12px;font-weight:700;padding:4px 9px;border-radius:999px;background:var(--s2,#eee);border:1px solid var(--brd,#ddd)}'+
-'.tsh-tariff{font-size:13px;color:var(--mu,#666);margin-bottom:12px}'+
 '.tsh-order{width:100%;border:none;border-radius:12px;padding:14px;font-size:16px;font-weight:900;background:#f5c518;color:#111;cursor:pointer}'+
 '.tsh-note{background:var(--s2,#f5f5f5);border:1px solid var(--brd,#ddd);border-left:4px solid #f5c518;border-radius:10px;padding:11px 12px;font-size:14px;line-height:1.45;margin-bottom:10px}'+
 '.tsh-sec{width:100%;border:none;border-radius:12px;padding:12px;font-size:15px;font-weight:800;background:var(--tx,#111);color:var(--s1,#fff);cursor:pointer;margin-bottom:8px}'+
@@ -229,18 +281,26 @@ function buildSheet(){
 }
 function closeSheet(){sheet.classList.remove('on');sheetBg.classList.remove('on');}
 function openSheet(c){
-  var t=S(), night=isNight(), rate=night?TARIFF.kmNight:TARIFF.km;
-  var firm=c.f==='ON'?'ОН-СИТИТРАНС':'ОТ-СИТИТРАНС', eta='';
+  var t=S(), night=isNight(), T=c.x.t, ph=PHOTOS[String(c.m||'').trim()], eta='';
+  var firm=c.f==='ON'?'ОН-СИТИТРАНС':'ОТ-СИТИТРАНС';
   if(window.userLat&&window.userLng){
     var km=distM(c.lat,c.lng,window.userLat,window.userLng)/1000*1.35;
     if(km<30)eta='<div class="tsh-eta">~'+Math.max(2,Math.round(km/25*60+1))+' '+t.away+'</div>';
   }
+  var car=ph?('<img src="img/cars/'+esc(ph.f)+'" alt="'+esc(c.m)+'" loading="lazy" onerror="this.remove()"><span class="tsh-face">'+esc(c.av)+'</span>')
+            :esc(c.av);
+  function tr(lbl,km,st,wt,on){return '<div class="tsh-tr'+(on?' on':'')+'"><span>'+lbl+'</span><b>'+km.toFixed(2)+' €'+t.km+'</b>'+
+    '<span class="x">'+t.start+' '+st.toFixed(2)+' € · '+t.wait+' '+wt.toFixed(2)+' €'+t.perMin+'</span></div>';}
   sheet.innerHTML='<div class="tsh-grab"></div>'+
-    '<div class="tsh-head"><div class="tsh-av">'+esc(c.av)+'</div>'+
+    '<div class="tsh-head"><div class="tsh-car">'+car+'</div>'+
     '<div class="tsh-id"><div class="tsh-name">'+esc(c.n)+'</div><div class="tsh-sub">'+esc(c.m)+' · '+esc(c.p)+'</div></div>'+eta+'</div>'+
     '<div class="tsh-chips"><span>'+firm+'</span><span>⭐ '+esc(c.r)+'</span><span>'+t.exp+' '+esc(c.y)+' '+t.yrs+'</span></div>'+
-    '<div class="tsh-tariff">'+t.tariff+': '+TARIFF.cur+TARIFF.start.toFixed(2)+' '+t.start+' + '+TARIFF.cur+rate.toFixed(2)+t.km+(night?' ('+t.night+')':'')+'</div>'+
-    '<div id="tsh-act"><button class="tsh-order" type="button">'+t.order+'</button></div>';
+    '<div class="tsh-h">'+t.musicH+'</div><div class="tsh-tags">'+c.x.music.map(function(k){return '<span>'+t.music[k]+'</span>';}).join('')+'</div>'+
+    '<div class="tsh-h">'+t.extrasH+'</div><div class="tsh-tags">'+c.x.ex.map(function(k){return '<span>'+t.ex[k]+'</span>';}).join('')+'</div>'+
+    '<div class="tsh-tar">'+tr(t.day,T.d,T.sd,T.wd,!night)+tr(t.nightT,T.n,T.sn,T.wn,night)+'</div>'+
+    '<div id="tsh-act"><button class="tsh-order" type="button">'+t.order+'</button></div>'+
+    (ph?'<div class="tsh-credit">📷 '+t.photo+': '+esc(ph.by)+' · '+esc(ph.lic)+' · <a href="'+esc(ph.url)+'" target="_blank" rel="noopener">Wikimedia Commons</a></div>':'');
+  sheet.scrollTop=0;
   sheet.querySelector('.tsh-order').addEventListener('click',function(){orderBlocked();});
   sheetBg.classList.add('on'); sheet.classList.add('on');
   if(window.track)window.track('pilot_sheet');
@@ -262,6 +322,7 @@ function ready(cb){
 }
 ready(function(){
   var map=window.map;
+  fetch('img/cars/index.json').then(function(r){return r.ok?r.json():{};}).then(function(j){PHOTOS=j||{};}).catch(function(){});
   Promise.all([fetch('demo-fleet.json').then(function(r){return r.json();}),loadRoads()]).then(function(res){
     if(G)standNodes=STANDS.map(function(s){return nodesNear(s[0],s[1],CFG.standRadius);});
     cars=res[0].map(makeCar);
