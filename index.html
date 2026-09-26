@@ -1122,9 +1122,11 @@ function renderMap(){
     var op=d.online?'1':'0.55';
     var ring=d.online?'#22c55e':'#777';
     var mSrc=d.avatar||(d.photos&&d.photos.length?d.photos[0]:null);
+    var bg=d.online?'#22c55e':'#555';
+    var fallbackHtml=('<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:17px;background:'+bg+'">'+ic+'</div>').replace(/"/g,'&quot;');
     var inner=mSrc
-      ? '<img src="'+mSrc+'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt="">'
-      : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:17px;background:'+(d.online?'#22c55e':'#555')+'">'+ic+'</div>';
+      ? '<img src="'+mSrc+'" onerror="this.outerHTML=\''+fallbackHtml+'\'" style="width:100%;height:100%;object-fit:cover;border-radius:50%" alt="">'
+      : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:17px;background:'+bg+'">'+ic+'</div>';
     var m=L.marker([d.lat,d.lng],{icon:L.divIcon({
       html:'<div style="opacity:'+op+';border:3px solid '+ring+';border-radius:50%;width:38px;height:38px;overflow:hidden;box-shadow:0 2px 8px #000a;background:#111">'+inner+'</div>',
       iconSize:[38,38],iconAnchor:[19,19],className:''
@@ -1730,7 +1732,8 @@ function sendPresence(){
 function initMapOnce(){
   if(mapReady||typeof L==='undefined')return;
   mapReady=true;
-  map=L.map('map',{zoomControl:true,attributionControl:false}).setView([42.6977,23.3219],15);
+  map=L.map('map',{zoomControl:false,attributionControl:false}).setView([42.6977,23.3219],15);
+  L.control.zoom({position:'topright'}).addTo(map); // topleft се застъпваше с #thud банера на sim-fleet
   tileLayer=L.tileLayer(getTileUrl(),{maxZoom:20,subdomains:getTileSubdomains()}).addTo(map);
   renderMap();
   // 📍 бутон "центрирай на мен"
