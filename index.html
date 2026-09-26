@@ -44,6 +44,13 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:'Segoe UI
 .leaflet-container{background:#e8e6df!important}
 .leaflet-popup-content-wrapper{background:var(--s2)!important;color:var(--tx)!important;border:1px solid var(--brd)!important;border-radius:10px!important}
 .leaflet-popup-tip{background:var(--s2)!important}
+/* PILOT-V2 */
+[data-theme="dark"] .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9) saturate(.6)}
+[data-theme="dark"] .leaflet-container{background:#1c1c1c!important}
+[data-theme="dark"] .leaflet-control-zoom a{background:#1a1a1a!important;color:#f0f0f0!important;border-color:#2e2e2e!important}
+#map .leaflet-top.leaflet-right{top:62px}
+#page-map #map{flex:1 1 auto;height:auto!important;min-height:260px}
+#map-list{display:none!important}
 
 /* SEARCH */
 .srch{padding:7px 10px;background:var(--s1);border-bottom:1px solid var(--brd);flex-shrink:0;display:flex;gap:7px}
@@ -138,7 +145,7 @@ html,body{height:100%;background:var(--bg);color:var(--tx);font-family:'Segoe UI
 <body>
 
 <div class="top">
-  <img src="img/header_logo.png" style="height:44px;object-fit:contain;display:block" alt="TAXITI">
+  <div class="logo" style="font-size:21px;font-weight:900;letter-spacing:1px;color:#f5c518">TAXI<span style="color:#fff">TI</span></div>
   <div style="display:flex;align-items:center;gap:8px">
     <button onclick="installApp()" id="install-btn" style="display:none;background:var(--taxiY);border:none;color:#000;border-radius:8px;padding:5px 9px;font-size:12px;cursor:pointer;font-weight:700">📲 Install</button>
     <button onclick="toggleTheme()" id="theme-btn" style="background:var(--taxiY);border:none;color:#000;border-radius:8px;padding:5px 9px;font-size:14px;cursor:pointer;font-weight:700">🌙</button>
@@ -1117,6 +1124,7 @@ function timeAgo(ts){
 function renderMap(){
   if(!mapReady||!map)return;
   mkrs.forEach(function(m){try{m.remove();}catch(e){}});mkrs=[];
+  if(!window.SHOW_OWN_MARKERS)return; // пилот: собствените маркери са скрити от картата
   DRIVERS.forEach(function(d){
     var ic=carI(d);
     var op=d.online?'1':'0.55';
@@ -1771,7 +1779,7 @@ function centerOnUser(announce){
     var dKm=haversineKm(userLat,userLng,42.6977,23.3219);
     if(dKm<60||announce){
       var pts=[[userLat,userLng]];
-      DRIVERS.forEach(function(d){if(d.lat&&d.lng)pts.push([d.lat,d.lng]);});
+      if(window.SHOW_OWN_MARKERS)DRIVERS.forEach(function(d){if(d.lat&&d.lng)pts.push([d.lat,d.lng]);});
       if(pts.length>1){map.fitBounds(pts,{padding:[36,36],maxZoom:14});}
       else{map.setView([userLat,userLng],14);}
       if(youMarker){try{youMarker.remove();}catch(e){}}
@@ -1841,7 +1849,7 @@ if('serviceWorker' in navigator){
   });
 }
 </script>
-<div id="build-stamp" style="text-align:center;font-size:10px;color:#666;padding:8px 0 14px;opacity:.7">TAXITI v2026.07.13-d</div>
-<script>console.log('[TAXITI] build v2026.07.13-d');</script>
+<div id="build-stamp" style="text-align:center;font-size:10px;color:#666;padding:8px 0 14px;opacity:.7">TAXITI v2026.09.26-pilot</div>
+<script>console.log('[TAXITI] build v2026.09.26-pilot');</script>
 <script src="sim-fleet.js"></script></body>
 </html><!-- rebuild trigger -->
