@@ -1,0 +1,31 @@
+name: Pilot v2
+on:
+  workflow_dispatch:
+    inputs:
+      roads:
+        description: 'Тегли наново roads.json от OSM (Overpass)'
+        type: boolean
+        default: true
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Пътна мрежа (OSM/Overpass)
+        if: ${{ inputs.roads }}
+        run: python3 scripts/build_roads.py
+      - name: UI patch на index.html
+        run: python3 scripts/patch_pilot_ui.py
+      - name: Проверки
+        run: |
+          node --check sim-fleet.js && echo 'SIM SYNTAX OK'
+          python3 -c "import json;j=json.load(open('roads.json'));print(len(j['n'])//2,'възела в roads.json')"
+      - name: Commit
+        run: |
+          git config user.name ci; git config user.email ci@taxiti
+          git add roads.json index.html
+          git diff --cached --quiet && echo 'нищо за commit' && exit 0
+          git commit -m "pilot v2: пътна мрежа от OSM + UI (тъмна карта, зум под банера, скрити собствени маркери) [skip ci]"
+          for i in 1 2 3; do git fetch origin main && git rebase origin/main && git push && break; sleep 3; done
