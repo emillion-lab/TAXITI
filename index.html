@@ -1772,7 +1772,7 @@ function centerOnUser(announce){
   navigator.geolocation.getCurrentPosition(function(p){
     userLat=p.coords.latitude;userLng=p.coords.longitude;
     var dKm=haversineKm(userLat,userLng,42.6977,23.3219);
-    if(dKm<60||announce){
+    if(dKm<25||announce){
       var pts=[[userLat,userLng]];
       if(window.SHOW_OWN_MARKERS)DRIVERS.forEach(function(d){if(d.lat&&d.lng)pts.push([d.lat,d.lng]);});
       if(pts.length>1){map.fitBounds(pts,{padding:[36,36],maxZoom:14});}
