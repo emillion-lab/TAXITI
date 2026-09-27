@@ -1811,7 +1811,8 @@ document.getElementById('modal').addEventListener('click',function(e){if(e.targe
 
 applyTheme();
 populateTimeSelects();
-render();
+var initSel=document.getElementById('lang-sel');if(initSel)initSel.value=lang;
+setLang(lang);   // прилага превода/текста при първо зареждане — не само при смяна на език или отваряне на профил
 pollGPS();
 setInterval(pollGPS,15000);
 // Init map immediately on load
